@@ -82,7 +82,7 @@ export default function BookingModal() {
 
   // Generate WhatsApp Direct Booking URL
   const getWhatsAppUrl = () => {
-    const text = `*NEW BOOKING REQUEST - ${createdBookingId || 'WANDERERS GOA'}*\n` +
+    const text = `*NEW BOOKING REQUEST - ${createdBookingId || 'WATCH MY TRIP ADVENTURE'}*\n` +
       `--------------------------------\n` +
       `*Package:* ${currentTour?.title}\n` +
       `*Date of Travel:* ${date}\n` +
@@ -95,7 +95,7 @@ export default function BookingModal() {
       `--------------------------------\n` +
       `Please confirm my slot and send driver pickup details!`;
 
-    return `https://wa.me/919876543210?text=${encodeURIComponent(text)}`;
+    return `https://wa.me/919588667027?text=${encodeURIComponent(text)}`;
   };
 
   return (

@@ -52,7 +52,7 @@ export default function WhyUsSection() {
 
             <div className="pt-2 flex flex-wrap gap-4">
               <a
-                href="https://wa.me/919876543210"
+                href="https://wa.me/919588667027"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold text-xs tracking-wider uppercase transition shadow-lg shadow-amber-500/20"

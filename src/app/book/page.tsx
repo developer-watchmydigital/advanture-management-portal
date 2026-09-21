@@ -69,7 +69,7 @@ export default function BookPage() {
       `--------------------------------\n` +
       `Please confirm my spot & send pickup driver info!`;
 
-    return `https://wa.me/919876543210?text=${encodeURIComponent(text)}`;
+    return `https://wa.me/919588667027?text=${encodeURIComponent(text)}`;
   };
 
   return (

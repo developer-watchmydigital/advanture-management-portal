@@ -226,7 +226,7 @@ export default function GallerySection() {
           <div className="flex items-center space-x-3 w-full sm:w-auto shrink-0">
             {/* WhatsApp CTA */}
             <a
-              href="https://wa.me/919876543210?text=Hi%20Goa%20Adventures,%20I%20saw%20your%20photo%20gallery%20and%20want%20to%20inquire%20about%20packages"
+              href="https://wa.me/919588667027?text=Hi%20Goa%20Adventures,%20I%20saw%20your%20photo%20gallery%20and%20want%20to%20inquire%20about%20packages"
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 sm:flex-none px-7 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs tracking-wider uppercase transition shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-2"
@@ -237,7 +237,7 @@ export default function GallerySection() {
 
             {/* Call CTA */}
             <a
-              href="tel:+919876543210"
+              href="tel:+919588667027"
               className="flex-1 sm:flex-none px-7 py-3.5 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-amber-400 text-amber-400 hover:text-white font-bold text-xs uppercase tracking-wider transition flex items-center justify-center space-x-2"
             >
               <Phone className="w-4 h-4" />
@@ -277,7 +277,7 @@ export default function GallerySection() {
 
                 <div className="flex items-center space-x-2">
                   <a
-                    href={`https://wa.me/919876543210?text=Hi,%20I%20want%20to%20inquire%20about%20${encodeURIComponent(activeItem.tourTitle)}`}
+                    href={`https://wa.me/919588667027?text=Hi,%20I%20want%20to%20inquire%20about%20${encodeURIComponent(activeItem.tourTitle)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-md"
@@ -287,7 +287,7 @@ export default function GallerySection() {
                   </a>
 
                   <a
-                    href="tel:+919876543210"
+                    href="tel:+919588667027"
                     className="px-5 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-amber-400 hover:text-white font-bold text-xs flex items-center space-x-1.5"
                   >
                     <Phone className="w-4 h-4" />

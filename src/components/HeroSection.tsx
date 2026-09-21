@@ -116,15 +116,15 @@ export default function HeroSection() {
           </button>
           
           <a
-            href="tel:+919876543210"
+            href="tel:+919588667027"
             className="px-5 py-3.5 rounded-xl bg-zinc-900/80 border border-zinc-700 hover:border-amber-400 text-white font-bold text-xs backdrop-blur-md hover:bg-zinc-900 transition flex items-center space-x-2"
           >
             <Phone className="w-4 h-4 text-amber-400" />
-            <span>CALL: +91 98765 43210</span>
+            <span>CALL: +91 95886 67027</span>
           </a>
 
           <a
-            href="https://wa.me/919876543210?text=Hi%20Goa%20Adventures,%20I%20want%20to%20know%20package%20details"
+            href="https://wa.me/919588667027?text=Hi%20Goa%20Adventures,%20I%20want%20to%20know%20package%20details"
             target="_blank"
             rel="noopener noreferrer"
             className="px-5 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition flex items-center space-x-2"

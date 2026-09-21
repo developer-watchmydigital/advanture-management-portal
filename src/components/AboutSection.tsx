@@ -37,35 +37,41 @@ export default function AboutSection() {
           <div className="lg:col-span-6 space-y-6">
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold uppercase tracking-widest">
               <Compass className="w-3.5 h-3.5" />
-              <span>ABOUT WANDERERS GOA</span>
+              <span>ABOUT WATCH MY TRIP ADVENTURE</span>
             </div>
 
             <h2 className="text-3xl sm:text-5xl font-extrabold text-white font-serif leading-tight">
               We Live & Breathe Goa’s Wildest Thrills
             </h2>
 
+            <div className="bg-zinc-950/80 border border-amber-500/30 p-4 rounded-2xl space-y-1">
+              <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider block">
+                LEADERSHIP
+              </span>
+              <p className="text-base font-extrabold text-white">Masrur Ahmed & Masum Ahmed</p>
+            </div>
+
             <p className="text-zinc-300 text-sm sm:text-base leading-relaxed">
-              Founded by passionate Goan ocean enthusiasts and adventure junkies, **Wanderers Goa** is dedicated to bringing you safe, high-octane water sports, deep-sea scuba exploration, luxury cruises, and jungle safari expeditions.
+              Founded and led by <strong>Masrur Ahmed & Masum Ahmed</strong>, <strong>Watch My Trip Adventure</strong> is dedicated to bringing you safe, high-octane water sports, deep-sea scuba exploration, luxury cruises, and 4x4 jungle safari expeditions.
             </p>
 
-            <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed">
-              We manage our own fleet of speedboats, catamaran vessels, and 4x4 safari vehicles. By cutting out third-party middlemen, we guarantee the best rates, direct hotel pickups, and top-tier safety standards for your family and friends.
-            </p>
-
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-zinc-800">
-              <div className="flex items-center space-x-3">
-                <MapPin className="w-5 h-5 text-amber-500 shrink-0" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-zinc-800 text-xs">
+              <div className="flex items-start space-x-3">
+                <MapPin className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                 <div>
-                  <h5 className="text-white text-xs font-bold">Base Location</h5>
-                  <p className="text-[11px] text-zinc-400">Calangute, North Goa</p>
+                  <h5 className="text-white font-bold uppercase text-[11px]">Office Location</h5>
+                  <p className="text-zinc-400 text-[11px] leading-snug">
+                    Golden Beach Road, Calangute Beach, Calangute, Goa - 403516
+                  </p>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-3">
-                <Phone className="w-5 h-5 text-amber-500 shrink-0" />
+              <div className="flex items-start space-x-3">
+                <Phone className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
                 <div>
-                  <h5 className="text-white text-xs font-bold">Direct Booking Hotline</h5>
-                  <p className="text-[11px] text-zinc-400">+91 98765 43210</p>
+                  <h5 className="text-white font-bold uppercase text-[11px]">Phone Hotline</h5>
+                  <p className="text-amber-400 font-bold text-[11px]">+91 95886 67027 (Direct & WhatsApp)</p>
+                  <p className="text-emerald-400 font-bold text-[11px]">+91 70583 23165 (Support & Bookings)</p>
                 </div>
               </div>
             </div>

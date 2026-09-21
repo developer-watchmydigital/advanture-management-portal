@@ -22,20 +22,20 @@ export default function Navbar() {
       <div className="bg-zinc-950/90 text-zinc-300 border-b border-amber-500/10 text-xs py-2 px-4 sm:px-8 flex justify-between items-center backdrop-blur-md">
         <div className="flex items-center space-x-6">
           <a
-            href="tel:+919876543210"
+            href="tel:+919588667027"
             className="flex items-center space-x-2 hover:text-amber-400 transition"
           >
             <Phone className="w-3.5 h-3.5 text-amber-500" />
-            <span className="font-medium">+91 98765 43210</span>
+            <span className="font-medium">+91 95886 67027</span>
           </a>
           <span className="hidden md:inline text-zinc-600">|</span>
           <span className="hidden md:inline text-zinc-400">
-            📍 Calangute Beach Road, North Goa, India
+            📍 Golden Beach Road, Calangute Beach, Calangute, Goa - 403516
           </span>
         </div>
         <div className="flex items-center space-x-4">
           <a
-            href="https://wa.me/919876543210?text=Hi%20Goa%20Adventures,%20I%20want%20to%20inquire%20about%20packages"
+            href="https://wa.me/919588667027?text=Hi%20Goa%20Adventures,%20I%20want%20to%20inquire%20about%20packages"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center space-x-1.5 text-emerald-400 hover:text-emerald-300 font-medium transition"
@@ -98,14 +98,14 @@ export default function Navbar() {
           {/* Header Action CTAs */}
           <div className="hidden sm:flex items-center space-x-3 translate-y-1.5 sm:translate-y-3">
             <a
-              href="tel:+919876543210"
+              href="tel:+919588667027"
               className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-100 hover:border-amber-500 hover:text-amber-400 transition text-xs font-semibold shadow-md"
             >
               <Phone className="w-3.5 h-3.5 text-amber-500" />
               <span>Call Now</span>
             </a>
             <a
-              href="https://wa.me/919876543210?text=Hi%20Goa%20Adventures,%20I%20want%20to%20book%20a%20tour"
+              href="https://wa.me/919588667027?text=Hi%20Goa%20Adventures,%20I%20want%20to%20book%20a%20tour"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-500 text-white hover:from-emerald-500 hover:to-teal-400 transition text-xs font-bold shadow-lg shadow-emerald-600/30"
@@ -173,14 +173,14 @@ export default function Navbar() {
 
             <div className="pt-3 border-t border-zinc-800 grid grid-cols-2 gap-2">
               <a
-                href="tel:+919876543210"
+                href="tel:+919588667027"
                 className="flex items-center justify-center space-x-2 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 text-amber-400 font-bold text-xs"
               >
                 <Phone className="w-4 h-4" />
                 <span>Call Now</span>
               </a>
               <a
-                href="https://wa.me/919876543210"
+                href="https://wa.me/919588667027"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center space-x-2 py-2.5 rounded-lg bg-emerald-600 text-white font-bold text-xs shadow-md shadow-emerald-600/30"
