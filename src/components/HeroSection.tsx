@@ -135,10 +135,10 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* Carousel Prev/Next Buttons */}
+      {/* Carousel Prev/Next Buttons (Hidden on mobile to prevent blocking description text) */}
       <button
         onClick={prevSlide}
-        className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-zinc-950/60 hover:bg-amber-500 hover:text-zinc-950 border border-zinc-700 text-white flex items-center justify-center transition backdrop-blur-md"
+        className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-zinc-950/60 hover:bg-amber-500 hover:text-zinc-950 border border-zinc-700 text-white hidden sm:flex items-center justify-center transition backdrop-blur-md"
         aria-label="Previous Slide"
       >
         <ChevronLeft className="w-6 h-6" />
@@ -146,7 +146,7 @@ export default function HeroSection() {
 
       <button
         onClick={nextSlide}
-        className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-zinc-950/60 hover:bg-amber-500 hover:text-zinc-950 border border-zinc-700 text-white flex items-center justify-center transition backdrop-blur-md"
+        className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-zinc-950/60 hover:bg-amber-500 hover:text-zinc-950 border border-zinc-700 text-white hidden sm:flex items-center justify-center transition backdrop-blur-md"
         aria-label="Next Slide"
       >
         <ChevronRight className="w-6 h-6" />

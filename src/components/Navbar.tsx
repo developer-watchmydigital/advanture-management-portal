@@ -64,14 +64,14 @@ export default function Navbar() {
             />
 
             {/* Brand Text starting inside the semi-circle curve of the eagle (aligned vertically) */}
-            <div className="-ml-5 sm:-ml-7 translate-y-1.5 sm:translate-y-3 flex items-baseline space-x-1.5 font-sans tracking-tighter leading-none text-2xl sm:text-3xl font-black">
+            <div className="-ml-5 sm:-ml-7 translate-y-2.5 sm:translate-y-3 flex items-baseline space-x-1.5 font-sans tracking-tighter leading-none text-2xl sm:text-3xl font-black">
               <span className="text-white font-black drop-shadow-md">Watch my trip</span>
               <span className="text-[#ff4d4d] font-black drop-shadow-md">Adventure</span>
             </div>
           </Link>
 
           {/* Desktop Nav Links */}
-          <div className="hidden lg:flex items-center space-x-7 font-medium text-sm text-zinc-200 translate-y-1.5 sm:translate-y-3">
+          <div className="hidden lg:flex items-center space-x-7 font-medium text-sm text-zinc-200 translate-y-2.5 sm:translate-y-3">
             <Link href="/" className="hover:text-amber-400 transition">
               Home
             </Link>
@@ -96,7 +96,7 @@ export default function Navbar() {
           </div>
 
           {/* Header Action CTAs */}
-          <div className="hidden sm:flex items-center space-x-3 translate-y-1.5 sm:translate-y-3">
+          <div className="hidden sm:flex items-center space-x-3 translate-y-2.5 sm:translate-y-3">
             <a
               href="tel:+919588667027"
               className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-100 hover:border-amber-500 hover:text-amber-400 transition text-xs font-semibold shadow-md"
@@ -118,7 +118,7 @@ export default function Navbar() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 text-zinc-300 hover:text-white focus:outline-none translate-y-1.5 sm:translate-y-3"
+            className="lg:hidden p-2 text-zinc-300 hover:text-white focus:outline-none translate-y-2.5 sm:translate-y-3"
             aria-label="Toggle Navigation Menu"
           >
             {mobileMenuOpen ? <X className="w-6 h-6 text-amber-400" /> : <Menu className="w-6 h-6" />}
