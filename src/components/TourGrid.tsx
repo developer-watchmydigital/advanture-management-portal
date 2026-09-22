@@ -28,9 +28,9 @@ export default function TourGrid() {
 
     if (selectedCategory === 'all') return true;
     if (selectedCategory === 'scuba')
-      return tour.id.includes('scuba') || tour.id.includes('water-sports') || tour.id.includes('snorkeling') || tour.id.includes('flyboard');
+      return tour.id.includes('scuba') || tour.id.includes('water-sports') || tour.id.includes('snorkeling') || tour.id.includes('flyboard') || tour.id.includes('kayaking');
     if (selectedCategory === 'sightseeing')
-      return tour.id.includes('tour') || tour.id.includes('dudhsagar') || tour.id.includes('amboli') || tour.id.includes('boating');
+      return tour.id.includes('tour') || tour.id.includes('dudhsagar') || tour.id.includes('amboli') || tour.id.includes('boating') || tour.id.includes('dolphin');
     if (selectedCategory === 'cruise')
       return tour.id.includes('cruise') || tour.id.includes('casino') || tour.id.includes('party');
     if (selectedCategory === 'extreme')

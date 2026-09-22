@@ -1047,5 +1047,106 @@ export const INITIAL_TOURS: Tour[] = [
       }
     ],
     isFeatured: true
+  },
+  {
+    id: 'kayaking-adventure',
+    slug: 'kayaking-adventure',
+    title: 'Goa Backwater Kayaking Experience',
+    tagline: 'Paddle through pristine backwaters, mangroves & scenic Goa river bays',
+    price: 700,
+    originalPrice: 1000,
+    discount: '30% OFF',
+    duration: '2 Hours Activity',
+    rating: 4.9,
+    reviewCount: 180,
+    heroMedia: 'https://images.unsplash.com/photo-1544551763-77ef2d0cfc23?q=80&w=1200&auto=format&fit=crop',
+    thumbnails: [
+      'https://images.unsplash.com/photo-1544551763-77ef2d0cfc23?q=80&w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?q=80&w=400&auto=format&fit=crop'
+    ],
+    mediaGallery: [
+      'https://images.unsplash.com/photo-1544551763-77ef2d0cfc23?q=80&w=800&auto=format&fit=crop'
+    ],
+    description: 'Paddle through Goa tranquil backwaters, lush mangrove forests, and serene river estuaries with top-of-the-line kayaks, safety gear, and certified guides.',
+    placesCovered: ['Sal Backwaters', 'Spike Island Mangroves', 'River Estuary'],
+    tourRoute: 'Jetty Briefing -> Life Jacket Fitting -> Guided Kayak Tour -> Refreshments',
+    timings: 'Flexible Slots: 07:00 AM - 05:00 PM',
+    inclusions: [
+      'Single/Double Kayak Rental',
+      'PADDLE & CE Life Jackets',
+      'Safety Instructor Guidance',
+      'Mineral Water & Fresh Fruit Snacks'
+    ],
+    exclusions: ['Hotel Transfers'],
+    itinerary: [],
+    isFeatured: true
+  },
+  {
+    id: 'snow-park-goa',
+    slug: 'snow-park-goa',
+    title: 'Snow Park Goa Sub-Zero Experience',
+    tagline: 'Real Snowfall, Ice Slides, Sledging & Snow Bar at -5°C',
+    price: 500,
+    originalPrice: 700,
+    discount: '17% OFF',
+    duration: '1.5 Hours Slot',
+    rating: 4.7,
+    reviewCount: 310,
+    heroMedia: 'https://images.unsplash.com/photo-1517299321609-52687d1bc55a?q=80&w=1200&auto=format&fit=crop',
+    thumbnails: [
+      'https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?q=80&w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1548777123-e216912df7f8?q=80&w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1516820208784-270b250306e3?q=80&w=400&auto=format&fit=crop'
+    ],
+    mediaGallery: [
+      'https://images.unsplash.com/photo-1517299321609-52687d1bc55a?q=80&w=800&auto=format&fit=crop'
+    ],
+    description: 'Experience -5°C freezing snow right inside tropical Goa! Make snowmen, slide down ice slides, play snowball fights, climb ice rocks, and enjoy drinks in real ice glasses at the snow bar.',
+    placesCovered: ['Baga Snow Park Arena', 'Ice Slide Zone', 'Real Snowfall Chamber'],
+    tourRoute: 'Check-in Desk -> Thermal Suits & Boots Fitment -> Snow Chamber Entry',
+    timings: 'Daily Slots: 11:00 AM - 08:00 PM',
+    inclusions: [
+      '1 Hour Entry to Sub-zero Snow Chamber',
+      'Sterilized Thermal Jackets, Boots & Gloves',
+      'Sledging Slides & Snowfall Dance Floor'
+    ],
+    exclusions: ['Warm Socks (Available for purchase at venue)'],
+    itinerary: [],
+    isFeatured: true
+  },
+  {
+    id: 'dolphin-spotting-trip',
+    slug: 'dolphin-spotting-trip',
+    title: 'Goa Dolphin Sightseeing Boat Trip',
+    tagline: 'Spot Wild Dolphins Leaping in Ocean Bay & Fort Aguada Coastal Cruise',
+    price: 1000,
+    originalPrice: 1200,
+    discount: '29% OFF',
+    duration: '1 Hour Boat Cruise',
+    rating: 4.8,
+    reviewCount: 410,
+    heroMedia: 'https://images.unsplash.com/photo-1570459027562-4a916cc6113f?q=80&w=1200&auto=format&fit=crop',
+    thumbnails: [
+      'https://images.unsplash.com/photo-1570459027562-4a916cc6113f?q=80&w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?q=80&w=400&auto=format&fit=crop'
+    ],
+    mediaGallery: [
+      'https://images.unsplash.com/photo-1570459027562-4a916cc6113f?q=80&w=800&auto=format&fit=crop'
+    ],
+    description: 'Experience the magic of wild Indo-Pacific humpback dolphins jumping around the bay! Enjoy a scenic boat ride along Sinquerim & Coco Beach coastlines past Fort Aguada and Millionaire Palace.',
+    placesCovered: ['Dolphin Bay', 'Fort Aguada Ocean Overlook', 'Millionaire Palace View', 'Coco Beach Estuary'],
+    tourRoute: 'Jetty Boarding -> Coastal Cruise -> Dolphin Bay Sightseeing -> Return Pier',
+    timings: 'Morning & Evening Slots: 08:30 AM - 05:30 PM',
+    inclusions: [
+      '1 Hour Sightseeing Boat Cruise',
+      'Life Jackets & Safety Gear',
+      'Fort Aguada & Palace Coastal Sightseeing',
+      'Certified Boat Master Guidance'
+    ],
+    exclusions: ['Hotel Transfers'],
+    itinerary: [],
+    isFeatured: true
   }
 ];

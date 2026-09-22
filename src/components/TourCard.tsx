@@ -47,12 +47,8 @@ export default function TourCard({ tour }: TourCardProps) {
           </div>
         )}
 
-        {/* Duration & Rating Pills (Exact layout from uploaded reference image) */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-white">
-          <span className="flex items-center space-x-1.5 bg-zinc-950/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-zinc-800 font-semibold shadow-md">
-            <Clock className="w-3.5 h-3.5 text-amber-400" />
-            <span>{tour.duration}</span>
-          </span>
+        {/* Rating Pill */}
+        <div className="absolute bottom-3 right-3 flex items-center justify-end text-xs text-white">
           <span className="flex items-center space-x-1 bg-zinc-950/80 backdrop-blur-md px-2.5 py-1.5 rounded-lg border border-zinc-800 text-amber-400 font-bold shadow-md">
             <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
             <span>{tour.rating} ({tour.reviewCount})</span>

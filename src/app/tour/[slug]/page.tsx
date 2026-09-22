@@ -20,7 +20,6 @@ import {
   Sparkles,
   Star,
   Compass,
-  Calendar,
   ShieldCheck,
   Users,
   Camera,
@@ -158,14 +157,14 @@ export default function TourDetailPage() {
 
               <div className="grid grid-cols-2 gap-2">
                 <a
-                  href="tel:+919876543210"
+                  href="tel:+919588667027"
                   className="py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-bold text-xs flex items-center justify-center space-x-1.5 border border-zinc-700 transition"
                 >
                   <Phone className="w-4 h-4 text-amber-400" />
                   <span>Call Now</span>
                 </a>
                 <a
-                  href={`https://wa.me/919876543210?text=Hi,%20I%20want%20to%20inquire%20about%20${encodeURIComponent(tour.title)}`}
+                  href={`https://wa.me/919588667027?text=Hi,%20I%20want%20to%20inquire%20about%20${encodeURIComponent(tour.title)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center space-x-1.5 transition shadow-lg shadow-emerald-600/30"
@@ -342,48 +341,7 @@ export default function TourDetailPage() {
               </div>
             </div>
 
-            {/* Detailed Itinerary Step-by-Step with Photos */}
-            <div className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-6 backdrop-blur-md">
-              <h2 className="text-2xl font-bold text-white font-serif flex items-center space-x-2">
-                <Calendar className="w-6 h-6 text-amber-400" />
-                <span>Day & Time Wise Tour Itinerary</span>
-              </h2>
 
-              <div className="space-y-8 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-amber-500/20">
-                {tour.itinerary.map((item, idx) => (
-                  <div key={idx} className="relative pl-10 group">
-                    {/* Circle Node */}
-                    <div className="absolute left-0 top-1 w-7 h-7 rounded-full bg-zinc-950 border-2 border-amber-500 flex items-center justify-center text-[10px] font-black text-amber-400 group-hover:bg-amber-500 group-hover:text-zinc-950 transition">
-                      {idx + 1}
-                    </div>
-
-                    <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl hover:border-amber-500/30 transition space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-base font-bold text-white">{item.title}</h3>
-                        {item.time && (
-                          <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded border border-amber-500/20">
-                            {item.time}
-                          </span>
-                        )}
-                      </div>
-
-                      <p className="text-xs text-zinc-300 leading-relaxed">{item.description}</p>
-
-                      {/* Photo associated with this itinerary step */}
-                      {item.photo && (
-                        <div className="h-44 sm:h-56 rounded-xl overflow-hidden mt-3 border border-zinc-800">
-                          <img
-                            src={item.photo}
-                            alt={item.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
 
             {/* Inclusions & Exclusions Checklist */}
             <div className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-6 backdrop-blur-md">

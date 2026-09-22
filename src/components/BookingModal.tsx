@@ -141,15 +141,15 @@ export default function BookingModal() {
       <div className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl relative max-h-[90vh] flex flex-col">
         {/* Modal Header */}
         <div className="p-6 bg-gradient-to-r from-amber-950/60 to-zinc-900 border-b border-zinc-800 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Sparkles className="w-5 h-5 text-amber-400" />
-            <h3 className="text-lg font-bold text-white font-serif">
-              {isSuccess ? 'Booking Request Submitted!' : 'Reserve Your Slot'}
+          <div className="flex items-center space-x-2 overflow-hidden pr-2">
+            <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
+            <h3 className="text-base sm:text-lg font-bold text-white font-serif line-clamp-1">
+              {isSuccess ? 'Booking Request Submitted!' : (currentTour?.title || 'Book Package')}
             </h3>
           </div>
           <button
             onClick={handleClose}
-            className="w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition"
+            className="w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -281,7 +281,7 @@ export default function BookingModal() {
                   <input
                     type="tel"
                     required
-                    placeholder="+91 9876543210"
+                    placeholder="+91 95886 67027"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white font-medium focus:border-amber-500 focus:outline-none placeholder-zinc-600"
