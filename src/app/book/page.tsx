@@ -21,7 +21,7 @@ export default function BookPage() {
         tagline: pkg.name,
         price: pkg.price,
         originalPrice: pkg.originalPrice || pkg.price + 500,
-        discount: pkg.discount || '',
+        discount: 'VIP ACCESS',
         duration: 'Evening Casino VIP Pass',
         rating: 4.9,
         reviewCount: 150,
