@@ -65,7 +65,7 @@ export default function Navbar() {
 
             {/* Brand Text starting inside the semi-circle curve of the eagle (aligned vertically) */}
             <div className="-ml-5 sm:-ml-7 translate-y-2.5 sm:translate-y-3 flex items-baseline space-x-1.5 font-sans tracking-tighter leading-none text-2xl sm:text-3xl font-black">
-              <span className="text-white font-black drop-shadow-md">Watch my trip</span>
+              <span className="text-white font-black drop-shadow-md">Watch my</span>
               <span className="text-[#ff4d4d] font-black drop-shadow-md">Adventure</span>
             </div>
           </Link>

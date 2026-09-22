@@ -17,7 +17,7 @@ export default function Footer() {
               className="h-16 w-auto object-contain transition-transform duration-300 group-hover:scale-105 shrink-0"
             />
             <div className="-ml-5 translate-y-2 flex items-baseline space-x-1.5 font-sans tracking-tighter leading-none text-2xl font-black">
-              <span className="text-white font-black drop-shadow-md">Watch my trip</span>
+              <span className="text-white font-black drop-shadow-md">Watch my</span>
               <span className="text-[#ff4d4d] font-black drop-shadow-md">Adventure</span>
             </div>
           </Link>

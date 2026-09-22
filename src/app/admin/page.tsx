@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
-import { Tour, Booking, HeroSlide, GalleryItem } from '@/types';
+import { Tour, Booking, HeroSlide, GalleryItem, CasinoVenue, CasinoTierPackage } from '@/types';
 import {
   Lock,
   Plus,
@@ -40,7 +40,11 @@ import {
   MessageCircle,
   MapPin,
   Image as ImageIcon,
-  Video as VideoIcon
+  Video as VideoIcon,
+  Ticket,
+  CircleDollarSign,
+  Wine,
+  Utensils
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -51,6 +55,7 @@ export default function AdminPage() {
     heroSlides,
     cinematicData,
     galleryItems,
+    casinoVenues,
     reviewVideoUrl,
     addTour,
     updateTour,
@@ -63,7 +68,10 @@ export default function AdminPage() {
     updateHeroSlide,
     updateCinematicData,
     addGalleryItem,
-    deleteGalleryItem
+    deleteGalleryItem,
+    addCasinoVenue,
+    updateCasinoVenue,
+    deleteCasinoVenue
   } = useApp();
 
   // Authentication State
@@ -75,7 +83,7 @@ export default function AdminPage() {
   // Mobile Navigation Sidebar Drawer State
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'hero' | 'cinematic' | 'tours' | 'gallery' | 'reviews'
+    'dashboard' | 'hero' | 'cinematic' | 'tours' | 'casino' | 'gallery' | 'reviews'
   >('dashboard');
 
   // Date Filter State for Dashboard Analytics
@@ -108,6 +116,7 @@ export default function AdminPage() {
   const [formTimings, setFormTimings] = useState('');
   const [formInclusions, setFormInclusions] = useState('');
   const [formMediaGallery, setFormMediaGallery] = useState<string[]>([]);
+  const [formVideos, setFormVideos] = useState<string[]>([]);
   const [formItinerary, setFormItinerary] = useState<
     { id: string; time: string; title: string; description: string; photo: string }[]
   >([]);
@@ -116,6 +125,31 @@ export default function AdminPage() {
   const [newGalleryTitle, setNewGalleryTitle] = useState('');
   const [newGalleryMediaUrl, setNewGalleryMediaUrl] = useState('');
   const [newGalleryMediaType, setNewGalleryMediaType] = useState<'image' | 'video'>('image');
+
+  // Casino Tariff Management State
+  const [selectedCasinoAdminVenueId, setSelectedCasinoAdminVenueId] = useState<string>('deltin-royale');
+  const [isCasinoPkgModalOpen, setIsCasinoPkgModalOpen] = useState(false);
+  const [editingCasinoPkgId, setEditingCasinoPkgId] = useState<string | null>(null);
+
+  const [pkgFormName, setPkgFormName] = useState('');
+  const [pkgFormPrice, setPkgFormPrice] = useState<number>(4400);
+  const [pkgFormOriginalPrice, setPkgFormOriginalPrice] = useState<number>(4500);
+  const [pkgFormOtpc, setPkgFormOtpc] = useState<number>(2000);
+  const [pkgFormLiquorLabel, setPkgFormLiquorLabel] = useState('');
+  const [pkgFormAccessTags, setPkgFormAccessTags] = useState('Vegas, Sky Bar');
+  const [pkgFormAgeRange, setPkgFormAgeRange] = useState('');
+  const [pkgFormImage, setPkgFormImage] = useState('');
+  const [pkgFormDrinkCategories, setPkgFormDrinkCategories] = useState<
+    { category: string; itemsString: string }[]
+  >([]);
+
+  // Venue Header Edit State
+  const [isVenueEditOpen, setIsVenueEditOpen] = useState(false);
+  const [venueFormName, setVenueFormName] = useState('');
+  const [venueFormLocation, setVenueFormLocation] = useState('');
+  const [venueFormEffectiveDate, setVenueFormEffectiveDate] = useState('');
+  const [venueFormTagline, setVenueFormTagline] = useState('');
+  const [venueFormImage, setVenueFormImage] = useState('');
 
   // Load Auth from sessionStorage
   useEffect(() => {
@@ -251,6 +285,7 @@ export default function AdminPage() {
     setFormTimings('08:30 AM Pickup | 05:30 PM Drop');
     setFormInclusions('AC Pickup & Drop, Equipment, Guide, Lunch');
     setFormMediaGallery([]);
+    setFormVideos(['/gemini_generated_video_89554782.mp4']);
     setFormItinerary([
       {
         id: 'it-1',
@@ -288,6 +323,7 @@ export default function AdminPage() {
     setFormTimings(tour.timings);
     setFormInclusions(tour.inclusions.join(', '));
     setFormMediaGallery(tour.mediaGallery || []);
+    setFormVideos(tour.videos || ['/gemini_generated_video_89554782.mp4']);
     setFormItinerary(
       tour.itinerary.map((item, idx) => ({
         id: item.id || `it-${idx}`,
@@ -319,6 +355,7 @@ export default function AdminPage() {
       heroMedia: formHeroMedia,
       thumbnails: [formThumb1, formThumb2, formThumb3] as [string, string, string],
       mediaGallery: formMediaGallery.slice(0, 6),
+      videos: formVideos,
       description: formDescription,
       placesCovered: placesArray.length > 0 ? placesArray : ['Goa Spot'],
       tourRoute: formRoute,
@@ -397,6 +434,138 @@ export default function AdminPage() {
     const updated = [...cinematicData.activities];
     updated[idx] = val;
     updateCinematicData({ activities: updated });
+  };
+
+  // Casino Management Helpers
+  const activeAdminVenue = casinoVenues.find(v => v.id === selectedCasinoAdminVenueId) || casinoVenues[0];
+
+  const openNewCasinoPkgModal = () => {
+    setEditingCasinoPkgId(null);
+    setPkgFormName('NEW TARIFF PACKAGE');
+    setPkgFormPrice(3500);
+    setPkgFormOriginalPrice(3800);
+    setPkgFormOtpc(1500);
+    setPkgFormLiquorLabel('UNLIMITED IMFL & HOUSE LIQUOR');
+    setPkgFormAccessTags('Vegas, Sky Bar');
+    setPkgFormAgeRange('');
+    setPkgFormImage('https://images.unsplash.com/photo-1511193311914-0346f16efe90?q=80&w=800&auto=format&fit=crop');
+    setPkgFormDrinkCategories([
+      { category: 'WHISKEY', itemsString: 'Blenders Pride, Signature, Royal Challenge' },
+      { category: 'VODKA', itemsString: 'Magic Moments, Smirnoff' },
+      { category: 'BEER', itemsString: 'Kingfisher Premium Pint' }
+    ]);
+    setIsCasinoPkgModalOpen(true);
+  };
+
+  const openEditCasinoPkgModal = (pkg: CasinoTierPackage) => {
+    setEditingCasinoPkgId(pkg.id);
+    setPkgFormName(pkg.name);
+    setPkgFormPrice(pkg.price);
+    setPkgFormOriginalPrice(pkg.originalPrice || pkg.price);
+    setPkgFormOtpc(pkg.otpcWorth);
+    setPkgFormLiquorLabel(pkg.liquorTypeLabel);
+    setPkgFormAccessTags(pkg.accessTags ? pkg.accessTags.join(', ') : 'Vegas, Sky Bar');
+    setPkgFormAgeRange(pkg.ageRange || '');
+    setPkgFormImage(pkg.image || activeAdminVenue?.image || '');
+    setPkgFormDrinkCategories(
+      pkg.drinkCategories ? pkg.drinkCategories.map(c => ({ category: c.category, itemsString: c.items.join(', ') })) : []
+    );
+    setIsCasinoPkgModalOpen(true);
+  };
+
+  const handleSaveCasinoPkg = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeAdminVenue) return;
+
+    const accessTagsArray = pkgFormAccessTags.split(',').map(s => s.trim()).filter(Boolean);
+    const drinkCategoriesArray = pkgFormDrinkCategories.map(c => ({
+      category: c.category.toUpperCase(),
+      items: c.itemsString.split(',').map(i => i.trim()).filter(Boolean)
+    }));
+
+    const newPkg: CasinoTierPackage = {
+      id: editingCasinoPkgId || `pkg-${Date.now()}`,
+      name: pkgFormName,
+      price: Number(pkgFormPrice),
+      originalPrice: Number(pkgFormOriginalPrice),
+      otpcWorth: Number(pkgFormOtpc),
+      liquorTypeLabel: pkgFormLiquorLabel,
+      accessTags: accessTagsArray,
+      ageRange: pkgFormAgeRange || undefined,
+      image: pkgFormImage,
+      drinkCategories: drinkCategoriesArray
+    };
+
+    let updatedPackages = [...activeAdminVenue.packages];
+    if (editingCasinoPkgId) {
+      updatedPackages = updatedPackages.map(p => (p.id === editingCasinoPkgId ? newPkg : p));
+    } else {
+      updatedPackages.push(newPkg);
+    }
+
+    updateCasinoVenue(activeAdminVenue.id, { packages: updatedPackages });
+    setIsCasinoPkgModalOpen(false);
+  };
+
+  const handleDeleteCasinoPkg = (pkgId: string) => {
+    if (!activeAdminVenue) return;
+    if (confirm('Delete this tariff package?')) {
+      const updatedPackages = activeAdminVenue.packages.filter(p => p.id !== pkgId);
+      updateCasinoVenue(activeAdminVenue.id, { packages: updatedPackages });
+    }
+  };
+
+  const openVenueEditModal = () => {
+    if (!activeAdminVenue) return;
+    setVenueFormName(activeAdminVenue.name);
+    setVenueFormLocation(activeAdminVenue.location);
+    setVenueFormEffectiveDate(activeAdminVenue.effectiveDate);
+    setVenueFormTagline(activeAdminVenue.tagline);
+    setVenueFormImage(activeAdminVenue.image);
+    setIsVenueEditOpen(true);
+  };
+
+  const handleSaveVenueHeader = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeAdminVenue) return;
+    updateCasinoVenue(activeAdminVenue.id, {
+      name: venueFormName,
+      location: venueFormLocation,
+      effectiveDate: venueFormEffectiveDate,
+      tagline: venueFormTagline,
+      image: venueFormImage
+    });
+    setIsVenueEditOpen(false);
+  };
+
+  const handleAddNewVenue = () => {
+    const venueName = prompt('Enter New Casino Vessel Name:', 'NEW GOA CASINO');
+    if (!venueName) return;
+    const slug = venueName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    addCasinoVenue({
+      slug: slug || `casino-${Date.now()}`,
+      name: venueName.toUpperCase(),
+      location: 'CASINO • PANJIM • GOA',
+      effectiveDate: 'Effective Season 2025 - 2026',
+      tagline: 'Luxury offshore casino experience on the Mandovi River, Goa.',
+      image: 'https://images.unsplash.com/photo-1511193311914-0346f16efe90?q=80&w=1200&auto=format&fit=crop',
+      generalInclusions: ['UNLIMITED DINNER', 'UNLIMITED DRINKS*', 'LIVE ENTERTAINMENT'],
+      packages: [
+        {
+          id: `pkg-${Date.now()}-1`,
+          name: 'CLASSIC PACKAGE',
+          price: 3000,
+          originalPrice: 3500,
+          otpcWorth: 1000,
+          liquorTypeLabel: 'UNLIMITED HOUSE BRAND LIQUOR',
+          accessTags: ['Vegas', 'Sky Bar'],
+          drinkCategories: [
+            { category: 'WHISKEY', items: ['House Brands', 'Blenders Pride'] },
+            { category: 'BEER', items: ['Kingfisher Pint'] }
+          ]
+        }
+      ]
+    });
   };
 
   return (
@@ -537,6 +706,18 @@ export default function AdminPage() {
               </button>
 
               <button
+                onClick={() => setActiveTab('casino')}
+                className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition ${
+                  activeTab === 'casino'
+                    ? 'bg-amber-500 text-zinc-950 shadow-md'
+                    : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
+                }`}
+              >
+                <Ticket className="w-4 h-4 text-amber-400 font-bold" />
+                <span>5. Casino Tariffs</span>
+              </button>
+
+              <button
                 onClick={() => setActiveTab('gallery')}
                 className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition ${
                   activeTab === 'gallery'
@@ -545,7 +726,7 @@ export default function AdminPage() {
                 }`}
               >
                 <Camera className="w-4 h-4" />
-                <span>5. Manage Gallery</span>
+                <span>6. Manage Gallery</span>
               </button>
 
               <button
@@ -557,7 +738,7 @@ export default function AdminPage() {
                 }`}
               >
                 <Star className="w-4 h-4" />
-                <span>6. Reviews</span>
+                <span>7. Reviews</span>
               </button>
             </nav>
 
@@ -606,8 +787,9 @@ export default function AdminPage() {
                 { id: 'hero', label: '2. Hero Section', icon: Sliders },
                 { id: 'cinematic', label: '3. 4K Showcase', icon: Film },
                 { id: 'tours', label: '4. Top Packages', icon: Package },
-                { id: 'gallery', label: '5. Manage Gallery', icon: Camera },
-                { id: 'reviews', label: '6. Reviews Record', icon: Star }
+                { id: 'casino', label: '5. Casino Tariffs', icon: Ticket },
+                { id: 'gallery', label: '6. Manage Gallery', icon: Camera },
+                { id: 'reviews', label: '7. Reviews Record', icon: Star }
               ].map((t) => {
                 const Icon = t.icon;
                 return (
@@ -1180,7 +1362,162 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* TAB 5: GALLERY MANAGER */}
+            {/* TAB 5: CASINO TARIFFS MANAGER */}
+            {activeTab === 'casino' && (
+              <div className="space-y-6">
+                {/* Top Control Header */}
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-zinc-900 border border-zinc-800 p-6 rounded-3xl shadow-xl">
+                  <div>
+                    <span className="text-xs font-black text-amber-400 uppercase tracking-widest block">
+                      GOA OFF-SHORE VIP CASINOS
+                    </span>
+                    <h1 className="text-2xl font-extrabold text-white font-serif">
+                      Casino Tariffs & Package CMS
+                    </h1>
+                    <p className="text-xs text-zinc-400 mt-1">
+                      Manage Deltin Royale, Deltin Jaqk, prices, OTPC chip values, access decks, and liquor category breakdowns.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={handleAddNewVenue}
+                      className="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl border border-zinc-700 flex items-center space-x-1.5 transition"
+                    >
+                      <Plus className="w-4 h-4 text-amber-400" />
+                      <span>Add New Vessel</span>
+                    </button>
+
+                    <button
+                      onClick={openNewCasinoPkgModal}
+                      className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs rounded-xl shadow-lg flex items-center space-x-1.5 transition"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Create New Tariff Package</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Venue Selector Bar */}
+                <div className="flex flex-wrap items-center gap-3 bg-zinc-900 p-3 rounded-2xl border border-zinc-800">
+                  <span className="text-xs font-bold text-zinc-400 ml-2">Active Vessel:</span>
+                  {casinoVenues.map((venue) => {
+                    const isActive = venue.id === selectedCasinoAdminVenueId;
+                    return (
+                      <button
+                        key={venue.id}
+                        onClick={() => setSelectedCasinoAdminVenueId(venue.id)}
+                        className={`px-4 py-2 rounded-xl font-bold text-xs transition ${
+                          isActive
+                            ? 'bg-amber-500 text-zinc-950 shadow-md font-black'
+                            : 'bg-zinc-950 text-zinc-300 hover:bg-zinc-800'
+                        }`}
+                      >
+                        {venue.name} ({venue.packages.length} Packages)
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Active Venue Banner Card */}
+                {activeAdminVenue && (
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-xl space-y-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-zinc-800">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                            {activeAdminVenue.location}
+                          </span>
+                          <span className="text-[10px] text-zinc-400 border border-zinc-800 px-2 py-0.5 rounded">
+                            {activeAdminVenue.effectiveDate}
+                          </span>
+                        </div>
+                        <h2 className="text-2xl font-black text-white">{activeAdminVenue.name}</h2>
+                        <p className="text-xs text-zinc-400">{activeAdminVenue.tagline}</p>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={openVenueEditModal}
+                          className="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl flex items-center space-x-1.5"
+                        >
+                          <Edit className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Edit Vessel Details</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (casinoVenues.length <= 1) {
+                              alert('Cannot delete the last remaining casino venue!');
+                              return;
+                            }
+                            if (confirm(`Delete venue "${activeAdminVenue.name}"?`)) {
+                              deleteCasinoVenue(activeAdminVenue.id);
+                              setSelectedCasinoAdminVenueId(casinoVenues[0].id);
+                            }
+                          }}
+                          className="p-2 bg-red-950/40 text-red-400 hover:bg-red-900 rounded-xl border border-red-500/20"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Packages Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+                      {activeAdminVenue.packages.map((pkg) => (
+                        <div
+                          key={pkg.id}
+                          className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5 flex flex-col justify-between space-y-4 hover:border-amber-500/40 transition shadow-lg"
+                        >
+                          <div>
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h3 className="text-base font-extrabold text-white uppercase">{pkg.name}</h3>
+                                <span className="text-xs text-amber-400 font-medium block">{pkg.liquorTypeLabel}</span>
+                              </div>
+                              <span className="text-lg font-black text-white bg-zinc-900 px-3 py-1 rounded-xl border border-zinc-800">
+                                ₹{pkg.price.toLocaleString('en-IN')}
+                              </span>
+                            </div>
+
+                            {/* OTPC chip */}
+                            <div className="mt-3 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs flex items-center space-x-2">
+                              <CircleDollarSign className="w-4 h-4 text-amber-400 shrink-0" />
+                              <span className="text-amber-300 font-bold">
+                                {pkg.otpcWorth > 0 ? `OTPC: ₹${pkg.otpcWorth.toLocaleString('en-IN')}` : 'No OTPC (Child/Teen/Entry)'}
+                              </span>
+                            </div>
+
+                            {/* Drink categories count */}
+                            <div className="mt-3 text-[11px] text-zinc-400">
+                              🍷 <strong>Included Categories:</strong> {pkg.drinkCategories?.length || 0} categories listed
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-end space-x-2 pt-3 border-t border-zinc-800/80">
+                            <button
+                              onClick={() => openEditCasinoPkgModal(pkg)}
+                              className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl flex items-center space-x-1"
+                            >
+                              <Edit className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Edit Tariff & Drinks</span>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCasinoPkg(pkg.id)}
+                              className="p-1.5 bg-red-950/40 text-red-400 hover:bg-red-900 rounded-xl border border-red-500/20"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 6: GALLERY MANAGER */}
             {activeTab === 'gallery' && (
               <div className="space-y-6">
                 <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl shadow-xl space-y-4">
@@ -1637,6 +1974,289 @@ export default function AdminPage() {
                   className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black"
                 >
                   Save Package Details
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CASINO PACKAGE ADD/EDIT MODAL */}
+      {isCasinoPkgModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-md overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-3xl w-full p-6 space-y-5 my-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <h3 className="text-xl font-bold text-white font-serif">
+                {editingCasinoPkgId ? 'Edit Casino Package Tariff' : 'Add New Casino Package'}
+              </h3>
+              <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20">
+                Vessel: {activeAdminVenue?.name}
+              </span>
+            </div>
+
+            <form onSubmit={handleSaveCasinoPkg} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">Package Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. CLASSIC package or PREMIUM package"
+                  value={pkgFormName}
+                  onChange={(e) => setPkgFormName(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-white font-bold"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-zinc-300 font-bold mb-1">Selling Price (₹) *</label>
+                  <input
+                    type="number"
+                    required
+                    value={pkgFormPrice}
+                    onChange={(e) => setPkgFormPrice(Number(e.target.value))}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white font-mono font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-zinc-300 font-bold mb-1">Original Slashed Price (₹)</label>
+                  <input
+                    type="number"
+                    value={pkgFormOriginalPrice}
+                    onChange={(e) => setPkgFormOriginalPrice(Number(e.target.value))}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-zinc-300 font-bold mb-1">OTPC Gaming Chip (₹)</label>
+                  <input
+                    type="number"
+                    value={pkgFormOtpc}
+                    onChange={(e) => setPkgFormOtpc(Number(e.target.value))}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white font-mono text-amber-400 font-bold"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">Liquor Category Label *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. UNLIMITED HOUSE BRAND LIQUOR or UNLIMITED IMFL LIQUOR"
+                  value={pkgFormLiquorLabel}
+                  onChange={(e) => setPkgFormLiquorLabel(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">Package Eye-Catching Cover Photo URL / File</label>
+                <input
+                  type="text"
+                  placeholder="https://images.unsplash.com/..."
+                  value={pkgFormImage}
+                  onChange={(e) => setPkgFormImage(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white mb-1"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileUpload(e, (url) => setPkgFormImage(url))}
+                  className="text-zinc-400 text-[11px]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-300 font-bold mb-1">Deck Access Tags (Comma separated)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Vegas, Sky Bar"
+                    value={pkgFormAccessTags}
+                    onChange={(e) => setPkgFormAccessTags(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-zinc-300 font-bold mb-1">Age Range (For Child/Teen Packages)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Child: 5 yrs - 11 yrs | Teens: 12 yrs - 20 yrs"
+                    value={pkgFormAgeRange}
+                    onChange={(e) => setPkgFormAgeRange(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white"
+                  />
+                </div>
+              </div>
+
+              {/* INCLUDED LIQUOR & DRINK BRAND BREAKDOWN LIST */}
+              <div className="pt-4 border-t border-zinc-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-white text-sm">
+                    Included Liquor & Drink Categories ({pkgFormDrinkCategories.length})
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPkgFormDrinkCategories([
+                        ...pkgFormDrinkCategories,
+                        { category: 'NEW CATEGORY', itemsString: 'Brand Item 1, Brand Item 2' }
+                      ])
+                    }
+                    className="px-3 py-1 bg-amber-500 text-zinc-950 font-bold text-xs rounded-lg flex items-center space-x-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Drink Category</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {pkgFormDrinkCategories.map((cat, idx) => (
+                    <div key={idx} className="bg-zinc-950 p-3 rounded-2xl border border-zinc-800 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <input
+                          type="text"
+                          placeholder="Category Name (e.g. WHISKEY, VODKA, BEER)"
+                          value={cat.category}
+                          onChange={(e) => {
+                            const updated = [...pkgFormDrinkCategories];
+                            updated[idx].category = e.target.value;
+                            setPkgFormDrinkCategories(updated);
+                          }}
+                          className="bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1 text-amber-400 font-bold text-xs uppercase"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...pkgFormDrinkCategories];
+                            updated.splice(idx, 1);
+                            setPkgFormDrinkCategories(updated);
+                          }}
+                          className="text-red-400 text-xs hover:underline"
+                        >
+                          Remove
+                        </button>
+                      </div>
+
+                      <textarea
+                        rows={2}
+                        placeholder="Comma-separated included brand names (e.g. Red Label, Smirnoff, Kingfisher Pint)"
+                        value={cat.itemsString}
+                        onChange={(e) => {
+                          const updated = [...pkgFormDrinkCategories];
+                          updated[idx].itemsString = e.target.value;
+                          setPkgFormDrinkCategories(updated);
+                        }}
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-white text-xs"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setIsCasinoPkgModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-zinc-800 text-zinc-300 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black"
+                >
+                  Save Tariff Package
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CASINO VENUE HEADER EDIT MODAL */}
+      {isVenueEditOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-md">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-lg w-full p-6 space-y-4">
+            <h3 className="text-xl font-bold text-white font-serif border-b border-zinc-800 pb-3">
+              Edit Casino Vessel Header Info
+            </h3>
+
+            <form onSubmit={handleSaveVenueHeader} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">Vessel Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={venueFormName}
+                  onChange={(e) => setVenueFormName(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">Location Subtitle</label>
+                <input
+                  type="text"
+                  value={venueFormLocation}
+                  onChange={(e) => setVenueFormLocation(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">Effective Season Badge</label>
+                <input
+                  type="text"
+                  value={venueFormEffectiveDate}
+                  onChange={(e) => setVenueFormEffectiveDate(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">Tagline</label>
+                <textarea
+                  rows={2}
+                  value={venueFormTagline}
+                  onChange={(e) => setVenueFormTagline(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">Vessel Image Photo URL</label>
+                <input
+                  type="text"
+                  value={venueFormImage}
+                  onChange={(e) => setVenueFormImage(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white mb-1"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileUpload(e, (url) => setVenueFormImage(url))}
+                  className="text-zinc-400 text-[11px]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setIsVenueEditOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-zinc-800 text-zinc-300 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black"
+                >
+                  Update Vessel Info
                 </button>
               </div>
             </form>

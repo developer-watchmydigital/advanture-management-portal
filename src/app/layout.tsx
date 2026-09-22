@@ -16,9 +16,9 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: 'Watch my trip Adventure | #1 Extreme Water & Hill Adventures in Goa',
+  title: 'Watch my Adventure | #1 Extreme Water & Hill Adventures in Goa',
   description: 'Book thrilling Goa adventures: Scuba Diving at Grande Island, 55M Bungee Jumping, Dudhsagar Jeep Safari, Mandovi Luxury Dinner Cruise, VIP Floating Casino, and 5-in-1 Water Sports.',
-  keywords: ['Watch my trip Adventure', 'Goa adventures', 'scuba diving Goa', 'bungee jumping Goa', 'Dudhsagar safari', 'Mandovi dinner cruise', 'water sports Calangute'],
+  keywords: ['Watch my Adventure', 'Goa adventures', 'scuba diving Goa', 'bungee jumping Goa', 'Dudhsagar safari', 'Mandovi dinner cruise', 'water sports Calangute'],
   icons: {
     icon: '/logo.png',
     shortcut: '/logo.png',
@@ -32,8 +32,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${outfit.variable} ${playfair.variable} scroll-smooth`}>
-      <body className="bg-zinc-950 text-zinc-100 font-sans antialiased min-h-screen">
+    <html lang="en" data-scroll-behavior="smooth" className={`${outfit.variable} ${playfair.variable} scroll-smooth`} suppressHydrationWarning>
+      <body className="bg-zinc-950 text-zinc-100 font-sans antialiased min-h-screen" suppressHydrationWarning>
         <AppProvider>{children}</AppProvider>
       </body>
     </html>

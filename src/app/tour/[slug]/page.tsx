@@ -22,7 +22,11 @@ import {
   Compass,
   Calendar,
   ShieldCheck,
-  Users
+  Users,
+  Camera,
+  Video,
+  X,
+  Play
 } from 'lucide-react';
 
 export default function TourDetailPage() {
@@ -33,7 +37,15 @@ export default function TourDetailPage() {
 
   const tour = tours.find((t) => t.slug === slug || t.id === slug) || tours[0];
 
-  const [activeTab, setActiveTab] = useState<'itinerary' | 'inclusions' | 'route'>('itinerary');
+  // Gallery Media Tab State (Photos vs Videos)
+  const [mediaTab, setMediaTab] = useState<'photos' | 'videos'>('photos');
+
+  // Interactive View Stage / Lightbox Modal State
+  const [lightboxMedia, setLightboxMedia] = useState<{
+    url: string;
+    type: 'image' | 'video';
+    title: string;
+  } | null>(null);
 
   if (!tour) {
     return (
@@ -42,6 +54,25 @@ export default function TourDetailPage() {
       </div>
     );
   }
+
+  // Compile photos & videos lists
+  const photoList = [
+    { url: tour.heroMedia, title: 'Main Cover Photo' },
+    ...tour.thumbnails
+      .filter((t) => !t.toLowerCase().includes('.mp4'))
+      .map((t, idx) => ({ url: t, title: `Gallery Shot #${idx + 1}` })),
+    ...(tour.mediaGallery || [])
+      .filter((t) => !t.toLowerCase().includes('.mp4'))
+      .map((t, idx) => ({ url: t, title: `Gallery Shot #${idx + 3}` }))
+  ];
+
+  const videoList = [
+    ...(tour.videos || []),
+    ...tour.thumbnails.filter((t) => t.toLowerCase().includes('.mp4')),
+    '/gemini_generated_video_89554782.mp4'
+  ];
+  // Deduplicate videos
+  const uniqueVideos = Array.from(new Set(videoList));
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans relative selection:bg-amber-500 selection:text-zinc-950">
@@ -112,11 +143,11 @@ export default function TourDetailPage() {
             <div className="lg:col-span-4 bg-zinc-900/90 border border-zinc-800 p-6 rounded-3xl shadow-2xl backdrop-blur-xl space-y-4">
               <div className="flex items-baseline justify-between">
                 <div>
-                  <span className="text-xs text-zinc-400 line-through block">
+                  <span className="text-xs text-zinc-400 line-through block font-mono">
                     Original ₹{tour.originalPrice}
                   </span>
                   <div className="flex items-baseline space-x-1">
-                    <span className="text-3xl font-black text-amber-400">₹{tour.price}</span>
+                    <span className="text-3xl font-black text-amber-400 font-mono">₹{tour.price}</span>
                     <span className="text-xs text-zinc-400 font-semibold uppercase">/ Person</span>
                   </div>
                 </div>
@@ -157,31 +188,120 @@ export default function TourDetailPage() {
 
       {/* Main Tour Gallery & Detailed Info */}
       <section className="py-12 px-4 sm:px-8 max-w-7xl mx-auto">
-        {/* Photo Gallery Grid (Requirement: Cover photo + South Goa photos/videos) */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
-          <div className="md:col-span-2 h-72 sm:h-96 rounded-2xl overflow-hidden border border-zinc-800 relative group">
-            <img
-              src={tour.heroMedia}
-              alt={tour.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-            />
-            <div className="absolute top-3 left-3 bg-zinc-950/80 backdrop-blur-md px-3 py-1 rounded-md text-xs font-bold text-amber-400 border border-zinc-800">
-              Main Cover Photo
+        
+        {/* TWO TABS MEDIA GALLERY SECTION (PHOTOS vs VIDEOS) */}
+        <div className="mb-12 bg-zinc-900/60 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-6 backdrop-blur-md">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-zinc-800">
+            <div>
+              <h2 className="text-2xl font-bold text-white font-serif flex items-center space-x-2">
+                <Sparkles className="w-6 h-6 text-amber-400" />
+                <span>Package Experience Gallery</span>
+              </h2>
+              <p className="text-xs text-zinc-400 mt-1">
+                Explore real photos and 4K video clips captured during this tour package experience.
+              </p>
+            </div>
+
+            {/* Media Selector Tabs: 📸 Photos vs 🎥 Videos */}
+            <div className="flex items-center gap-2 bg-zinc-950 p-1.5 rounded-2xl border border-zinc-800">
+              <button
+                onClick={() => setMediaTab('photos')}
+                className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  mediaTab === 'photos'
+                    ? 'bg-amber-500 text-zinc-950 shadow-md font-black'
+                    : 'text-zinc-300 hover:text-white hover:bg-zinc-900'
+                }`}
+              >
+                <Camera className="w-4 h-4" />
+                <span>📸 Photos ({photoList.length})</span>
+              </button>
+
+              <button
+                onClick={() => setMediaTab('videos')}
+                className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  mediaTab === 'videos'
+                    ? 'bg-amber-500 text-zinc-950 shadow-md font-black'
+                    : 'text-zinc-300 hover:text-white hover:bg-zinc-900'
+                }`}
+              >
+                <Video className="w-4 h-4" />
+                <span>🎥 Videos ({uniqueVideos.length})</span>
+              </button>
             </div>
           </div>
 
-          {tour.thumbnails.map((img, i) => (
-            <div key={i} className="h-36 sm:h-44 md:h-96 rounded-2xl overflow-hidden border border-zinc-800 relative group">
-              <img
-                src={img}
-                alt={`${tour.title} Gallery ${i + 1}`}
-                className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
-              />
-              <div className="absolute bottom-2 left-2 bg-zinc-950/80 backdrop-blur-md px-2.5 py-0.5 rounded text-[10px] text-zinc-300 border border-zinc-800">
-                Gallery Shot #{i + 1}
-              </div>
+          {/* TAB 1: 📸 PHOTOS GRID (Exact layout from Image 2) */}
+          {mediaTab === 'photos' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-in fade-in duration-300">
+              {photoList.map((photo, i) => (
+                <div
+                  key={i}
+                  onClick={() =>
+                    setLightboxMedia({
+                      url: photo.url,
+                      type: 'image',
+                      title: photo.title
+                    })
+                  }
+                  className={`rounded-2xl overflow-hidden border border-zinc-800 relative group cursor-pointer shadow-lg hover:border-amber-500/60 transition duration-300 ${
+                    i === 0 ? 'md:col-span-2 h-72 sm:h-80' : 'h-48 sm:h-56'
+                  }`}
+                >
+                  <img
+                    src={photo.url}
+                    alt={photo.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition" />
+                  
+                  <div className="absolute top-3 left-3 bg-zinc-950/80 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-bold text-amber-400 border border-zinc-800 shadow">
+                    {photo.title}
+                  </div>
+
+                  <div className="absolute bottom-3 right-3 bg-amber-500/90 text-zinc-950 p-2 rounded-full opacity-0 group-hover:opacity-100 transition transform scale-90 group-hover:scale-100">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+
+          {/* TAB 2: 🎥 VIDEOS GRID */}
+          {mediaTab === 'videos' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
+              {uniqueVideos.map((videoUrl, idx) => (
+                <div
+                  key={idx}
+                  onClick={() =>
+                    setLightboxMedia({
+                      url: videoUrl,
+                      type: 'video',
+                      title: `${tour.title} - Video Clip #${idx + 1}`
+                    })
+                  }
+                  className="rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-950 relative group cursor-pointer shadow-xl hover:border-amber-500/60 transition duration-300 h-64 flex flex-col justify-between"
+                >
+                  <div className="relative w-full h-48 overflow-hidden bg-black">
+                    <video src={videoUrl} className="w-full h-full object-cover" muted />
+                    <div className="absolute inset-0 bg-zinc-950/40 group-hover:bg-zinc-950/20 transition flex items-center justify-center">
+                      <div className="w-14 h-14 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center shadow-2xl group-hover:scale-110 transition transform">
+                        <Play className="w-6 h-6 fill-zinc-950 ml-0.5" />
+                      </div>
+                    </div>
+                    <div className="absolute top-3 left-3 bg-zinc-950/80 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] font-bold text-amber-400 border border-zinc-800">
+                      4K VIDEO CLIP #{idx + 1}
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-zinc-900 flex items-center justify-between text-xs font-bold text-zinc-200">
+                    <span>Click to Play View Stage</span>
+                    <span className="text-amber-400">Watch Clip →</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
         </div>
 
         {/* Layout split: Left details, Right Booking Widget */}
@@ -193,6 +313,15 @@ export default function TourDetailPage() {
                 <Compass className="w-6 h-6 text-amber-400" />
                 <span>Tour Overview</span>
               </h2>
+
+              {/* Special Highlighting Banner (e.g. All activities in dam water; non-swimmers can also enjoy) */}
+              {tour.tagline && (
+                <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs sm:text-sm font-bold flex items-center space-x-2 shadow-md">
+                  <ShieldCheck className="w-5 h-5 text-amber-400 shrink-0" />
+                  <span>{tour.tagline}</span>
+                </div>
+              )}
+
               <p className="text-zinc-300 text-sm sm:text-base leading-relaxed">
                 {tour.description}
               </p>
@@ -213,7 +342,7 @@ export default function TourDetailPage() {
               </div>
             </div>
 
-            {/* Detailed Itinerary Step-by-Step with Photos (Pickup photo, Journey photo, Activity photo) */}
+            {/* Detailed Itinerary Step-by-Step with Photos */}
             <div className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-6 backdrop-blur-md">
               <h2 className="text-2xl font-bold text-white font-serif flex items-center space-x-2">
                 <Calendar className="w-6 h-6 text-amber-400" />
@@ -240,7 +369,7 @@ export default function TourDetailPage() {
 
                       <p className="text-xs text-zinc-300 leading-relaxed">{item.description}</p>
 
-                      {/* Photo associated with this itinerary step (Pickup photo, journey photo, etc.) */}
+                      {/* Photo associated with this itinerary step */}
                       {item.photo && (
                         <div className="h-44 sm:h-56 rounded-xl overflow-hidden mt-3 border border-zinc-800">
                           <img
@@ -307,8 +436,8 @@ export default function TourDetailPage() {
                   SPECIAL ONLINE RATE
                 </span>
                 <div className="flex items-center justify-center space-x-2">
-                  <span className="text-3xl font-black text-amber-400">₹{tour.price}</span>
-                  <span className="text-xs text-zinc-400 line-through">₹{tour.originalPrice}</span>
+                  <span className="text-3xl font-black text-amber-400 font-mono">₹{tour.price}</span>
+                  <span className="text-xs text-zinc-400 line-through font-mono">₹{tour.originalPrice}</span>
                 </div>
                 <p className="text-[11px] text-emerald-400 font-bold">Save {tour.discount} per booking</p>
               </div>
@@ -343,6 +472,40 @@ export default function TourDetailPage() {
           </div>
         </div>
       </section>
+
+      {/* VIEW STAGE / LIGHTBOX MODAL */}
+      {lightboxMedia && (
+        <div className="fixed inset-0 z-50 bg-zinc-950/95 backdrop-blur-xl flex items-center justify-center p-4">
+          <div className="relative max-w-5xl w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-4 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <span className="text-sm font-bold text-white">{lightboxMedia.title}</span>
+              <button
+                onClick={() => setLightboxMedia(null)}
+                className="p-2 text-zinc-400 hover:text-white rounded-xl bg-zinc-950 border border-zinc-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="relative max-h-[75vh] w-full flex items-center justify-center bg-black rounded-2xl overflow-hidden">
+              {lightboxMedia.type === 'video' ? (
+                <video
+                  src={lightboxMedia.url}
+                  controls
+                  autoPlay
+                  className="max-h-[70vh] w-auto max-w-full rounded-xl"
+                />
+              ) : (
+                <img
+                  src={lightboxMedia.url}
+                  alt={lightboxMedia.title}
+                  className="max-h-[70vh] w-auto max-w-full object-contain rounded-xl"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
       <BookingModal />

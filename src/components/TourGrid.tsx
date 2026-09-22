@@ -6,11 +6,11 @@ import TourCard from './TourCard';
 import { Sparkles, Search, Compass } from 'lucide-react';
 
 const CATEGORIES = [
-  { id: 'all', label: 'All 12 Packages' },
+  { id: 'all', label: 'All Packages' },
   { id: 'scuba', label: 'Scuba & Watersports' },
   { id: 'sightseeing', label: 'Tours & Safaris' },
-  { id: 'cruise', label: 'Cruises & Casino' },
-  { id: 'extreme', label: 'Bungee & Extreme' }
+  { id: 'cruise', label: 'Cruises & Party Boats' },
+  { id: 'extreme', label: 'Bungee & Flyboarding' }
 ];
 
 export default function TourGrid() {
@@ -28,13 +28,13 @@ export default function TourGrid() {
 
     if (selectedCategory === 'all') return true;
     if (selectedCategory === 'scuba')
-      return tour.id.includes('scuba') || tour.id.includes('water-sports');
+      return tour.id.includes('scuba') || tour.id.includes('water-sports') || tour.id.includes('snorkeling') || tour.id.includes('flyboard');
     if (selectedCategory === 'sightseeing')
-      return tour.id.includes('tour') || tour.id.includes('dudhsagar') || tour.id.includes('amboli');
+      return tour.id.includes('tour') || tour.id.includes('dudhsagar') || tour.id.includes('amboli') || tour.id.includes('boating');
     if (selectedCategory === 'cruise')
       return tour.id.includes('cruise') || tour.id.includes('casino') || tour.id.includes('party');
     if (selectedCategory === 'extreme')
-      return tour.id.includes('bungee') || tour.id.includes('snow');
+      return tour.id.includes('bungee') || tour.id.includes('snow') || tour.id.includes('flyboard');
 
     return true;
   });

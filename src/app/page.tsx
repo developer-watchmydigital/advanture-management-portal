@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
 import ProvidesSection from '@/components/ProvidesSection';
 import CinematicShowcaseSection from '@/components/CinematicShowcaseSection';
+import { CasinoTariffSection } from '@/components/CasinoTariffSection';
 import TourGrid from '@/components/TourGrid';
 import GallerySection from '@/components/GallerySection';
 import WhyUsSection from '@/components/WhyUsSection';
@@ -33,6 +34,9 @@ export default function HomePage() {
 
       {/* 2.5. Cinematic All-Package Video Showcase Section */}
       <CinematicShowcaseSection />
+
+      {/* 2.8. Goa VIP Casino Tariff Cards (Deltin Royale & Deltin Jaqk) */}
+      <CasinoTariffSection />
 
       {/* 3. Adventure Packages Grid (12 Tours - Image 2 Layout Reference) */}
       <TourGrid />

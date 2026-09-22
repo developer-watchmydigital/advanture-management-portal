@@ -1,12 +1,13 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Tour, Review, Booking, HeroSlide, CinematicShowcaseData, GalleryItem } from '@/types';
+import { Tour, Review, Booking, HeroSlide, CinematicShowcaseData, GalleryItem, CasinoVenue } from '@/types';
 import { INITIAL_TOURS } from '@/data/initialTours';
 import { INITIAL_REVIEWS } from '@/data/initialReviews';
 import { INITIAL_HERO_SLIDES } from '@/data/initialHeroSlides';
 import { INITIAL_CINEMATIC_DATA } from '@/data/initialCinematic';
 import { INITIAL_GALLERY_ITEMS } from '@/data/initialGallery';
+import { INITIAL_CASINO_VENUES } from '@/data/initialCasinoTariffs';
 
 interface AppContextType {
   tours: Tour[];
@@ -15,6 +16,7 @@ interface AppContextType {
   heroSlides: HeroSlide[];
   cinematicData: CinematicShowcaseData;
   galleryItems: GalleryItem[];
+  casinoVenues: CasinoVenue[];
   reviewVideoUrl: string;
 
   activeBookingTour: Tour | null;
@@ -44,6 +46,10 @@ interface AppContextType {
   addGalleryItem: (item: Omit<GalleryItem, 'id'>) => void;
   deleteGalleryItem: (id: string) => void;
 
+  addCasinoVenue: (venue: Omit<CasinoVenue, 'id'>) => void;
+  updateCasinoVenue: (id: string, venue: Partial<CasinoVenue>) => void;
+  deleteCasinoVenue: (id: string) => void;
+
   openBookingModal: (tour?: Tour) => void;
 }
 
@@ -56,6 +62,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(INITIAL_HERO_SLIDES);
   const [cinematicData, setCinematicData] = useState<CinematicShowcaseData>(INITIAL_CINEMATIC_DATA);
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(INITIAL_GALLERY_ITEMS);
+  const [casinoVenues, setCasinoVenues] = useState<CasinoVenue[]>(INITIAL_CASINO_VENUES);
   const [reviewVideoUrl, setReviewVideoUrl] = useState<string>('/gemini_generated_video_89554782.mp4');
 
   const [activeBookingTour, setActiveBookingTour] = useState<Tour | null>(null);
@@ -82,6 +89,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const savedGallery = localStorage.getItem('goa_gallery_items');
       if (savedGallery) setGalleryItems(JSON.parse(savedGallery));
+
+      const savedCasino = localStorage.getItem('goa_casino_tariffs');
+      if (savedCasino) setCasinoVenues(JSON.parse(savedCasino));
 
       const savedRevVideo = localStorage.getItem('goa_review_video');
       if (savedRevVideo) setReviewVideoUrl(savedRevVideo);
@@ -119,6 +129,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const saveGalleryItems = (items: GalleryItem[]) => {
     setGalleryItems(items);
     try { localStorage.setItem('goa_gallery_items', JSON.stringify(items)); } catch (e) { console.error(e); }
+  };
+
+  const saveCasinoVenues = (venues: CasinoVenue[]) => {
+    setCasinoVenues(venues);
+    try { localStorage.setItem('goa_casino_tariffs', JSON.stringify(venues)); } catch (e) { console.error(e); }
   };
 
   const saveReviewVideoUrl = (url: string) => {
@@ -233,6 +248,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     saveGalleryItems(updated);
   };
 
+  // Casino Venue actions
+  const addCasinoVenue = (venueData: Omit<CasinoVenue, 'id'>) => {
+    const newId = venueData.slug || `casino-${Date.now()}`;
+    const newVenue: CasinoVenue = { ...venueData, id: newId };
+    const updated = [...casinoVenues, newVenue];
+    saveCasinoVenues(updated);
+  };
+
+  const updateCasinoVenue = (id: string, updatedFields: Partial<CasinoVenue>) => {
+    const updated = casinoVenues.map(v => (v.id === id ? { ...v, ...updatedFields } : v));
+    saveCasinoVenues(updated);
+  };
+
+  const deleteCasinoVenue = (id: string) => {
+    const updated = casinoVenues.filter(v => v.id !== id);
+    saveCasinoVenues(updated);
+  };
+
   const openBookingModal = (tour?: Tour) => {
     if (tour) {
       setActiveBookingTour(tour);
@@ -249,6 +282,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         heroSlides,
         cinematicData,
         galleryItems,
+        casinoVenues,
         reviewVideoUrl,
         activeBookingTour,
         setActiveBookingTour,
@@ -270,6 +304,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateCinematicData,
         addGalleryItem,
         deleteGalleryItem,
+        addCasinoVenue,
+        updateCasinoVenue,
+        deleteCasinoVenue,
         openBookingModal
       }}
     >
