@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import { X, Calendar, Users, MapPin, Phone, User, FileText, CheckCircle2, MessageCircle, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -12,8 +12,43 @@ export default function BookingModal() {
     activeBookingTour,
     setActiveBookingTour,
     tours,
+    casinoVenues,
     addBooking
   } = useApp();
+
+  // Combine regular tours and casino VIP packages so any package can be selected
+  const allAvailableTours = useMemo(() => {
+    const casinoTours = (casinoVenues || []).flatMap((venue) =>
+      venue.packages.map((pkg) => ({
+        id: `casino-${pkg.id}`,
+        slug: `casino-${pkg.id}`,
+        title: `🎰 ${venue.name} — ${pkg.name}`,
+        tagline: pkg.name,
+        price: pkg.price,
+        originalPrice: pkg.originalPrice || pkg.price + 500,
+        discount: 'VIP ACCESS',
+        duration: 'Evening Casino VIP Pass',
+        rating: 4.9,
+        reviewCount: 150,
+        heroMedia: pkg.image || venue.image,
+        thumbnails: [pkg.image || venue.image],
+        description: `${venue.name} ${pkg.name} VIP Gaming & Dining Pass.`,
+        placesCovered: [venue.name, venue.location],
+        tourRoute: `${venue.location} -> Feeder Boat -> Vessel`,
+        timings: '06:00 PM onwards',
+        inclusions: ['Feeder boat transfer', 'Buffet Dinner', 'Unlimited Drinks', 'Live Stage Shows'],
+        exclusions: [],
+        itinerary: []
+      }))
+    );
+
+    const list = [...tours, ...casinoTours];
+
+    if (activeBookingTour && !list.some((t) => t.id === activeBookingTour.id)) {
+      return [activeBookingTour, ...list];
+    }
+    return list;
+  }, [tours, casinoVenues, activeBookingTour]);
 
   const [selectedTourId, setSelectedTourId] = useState<string>('');
   const [date, setDate] = useState<string>('');
@@ -28,18 +63,23 @@ export default function BookingModal() {
   useEffect(() => {
     if (activeBookingTour) {
       setSelectedTourId(activeBookingTour.id);
-    } else if (tours.length > 0) {
-      setSelectedTourId(tours[0].id);
+    } else if (allAvailableTours.length > 0) {
+      setSelectedTourId((prev) => (prev && allAvailableTours.some((t) => t.id === prev) ? prev : allAvailableTours[0].id));
     }
-    // Set default tomorrow date
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    setDate(tomorrow.toISOString().split('T')[0]);
-  }, [activeBookingTour, tours]);
+
+    if (!date) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      setDate(tomorrow.toISOString().split('T')[0]);
+    }
+  }, [activeBookingTour, isBookingModalOpen, allAvailableTours]);
 
   if (!isBookingModalOpen) return null;
 
-  const currentTour = tours.find((t) => t.id === selectedTourId) || tours[0];
+  const currentTour =
+    allAvailableTours.find((t) => t.id === selectedTourId) ||
+    activeBookingTour ||
+    allAvailableTours[0];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +102,6 @@ export default function BookingModal() {
     setCreatedBookingId(booking.id);
     setIsSuccess(true);
 
-    // Trigger celebration confetti
     try {
       confetti({
         particleCount: 100,
@@ -80,7 +119,6 @@ export default function BookingModal() {
     setActiveBookingTour(null);
   };
 
-  // Generate WhatsApp Direct Booking URL
   const getWhatsAppUrl = () => {
     const text = `*NEW BOOKING REQUEST - ${createdBookingId || 'WATCH MY TRIP ADVENTURE'}*\n` +
       `--------------------------------\n` +
@@ -106,7 +144,7 @@ export default function BookingModal() {
           <div className="flex items-center space-x-2">
             <Sparkles className="w-5 h-5 text-amber-400" />
             <h3 className="text-lg font-bold text-white font-serif">
-              {isSuccess ? 'Booking Request Submitted!' : 'Reserve Your Goa Adventure'}
+              {isSuccess ? 'Booking Request Submitted!' : 'Reserve Your Slot'}
             </h3>
           </div>
           <button
@@ -170,14 +208,14 @@ export default function BookingModal() {
               {/* Tour Selection */}
               <div>
                 <label className="block text-zinc-300 font-bold mb-1">
-                  Selected Tour Package *
+                  Selected Package *
                 </label>
                 <select
                   value={selectedTourId}
                   onChange={(e) => setSelectedTourId(e.target.value)}
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-white font-medium focus:border-amber-500 focus:outline-none"
                 >
-                  {tours.map((t) => (
+                  {allAvailableTours.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.title} — ₹{t.price} / person
                     </option>
@@ -255,12 +293,12 @@ export default function BookingModal() {
               <div>
                 <label className="block text-zinc-300 font-bold mb-1 flex items-center space-x-1">
                   <MapPin className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Pickup Location (Hotel / Area in Goa) *</span>
+                  <span>Hotel Pickup Location / Resort Name *</span>
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Hard Rock Hotel, Calangute"
+                  placeholder="e.g. Calangute Residency / Baga Hotel"
                   value={pickupLocation}
                   onChange={(e) => setPickupLocation(e.target.value)}
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white font-medium focus:border-amber-500 focus:outline-none placeholder-zinc-600"
@@ -271,37 +309,33 @@ export default function BookingModal() {
               <div>
                 <label className="block text-zinc-300 font-bold mb-1 flex items-center space-x-1">
                   <FileText className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Special Requirements / Requests</span>
+                  <span>Special Requirements / Requests (Optional)</span>
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="e.g. Non-swimmers, vegetarian lunch preference, child safety vest needed"
+                  placeholder="Dietary requests, non-swimmer guidance, pickup time notes..."
                   value={specialRequirements}
                   onChange={(e) => setSpecialRequirements(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white font-medium focus:border-amber-500 focus:outline-none placeholder-zinc-600"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white font-medium focus:border-amber-500 focus:outline-none placeholder-zinc-600 resize-none"
                 />
               </div>
 
-              {/* Price Calculation */}
-              <div className="p-3 bg-zinc-950 rounded-xl border border-zinc-800 flex items-center justify-between">
+              {/* Total Calculation & Submit */}
+              <div className="pt-2 border-t border-zinc-800 flex items-center justify-between">
                 <div>
-                  <span className="text-[11px] text-zinc-400 block">Total Estimated Price</span>
+                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">Estimated Total</span>
                   <span className="text-xl font-extrabold text-amber-400">
                     ₹{(currentTour?.price || 0) * guestCount}
                   </span>
                 </div>
-                <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
-                  Pay at Pickup Option Available
-                </span>
-              </div>
 
-              {/* Submit CTA */}
-              <button
-                type="submit"
-                className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-amber-500/20 transition cursor-pointer"
-              >
-                BOOK NOW
-              </button>
+                <button
+                  type="submit"
+                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/25 transition transform hover:scale-105"
+                >
+                  CONFIRM & BOOK SLOT
+                </button>
+              </div>
             </form>
           )}
         </div>

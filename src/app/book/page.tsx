@@ -10,8 +10,51 @@ import { Calendar, Users, MapPin, Phone, User, FileText, CheckCircle2, MessageCi
 import confetti from 'canvas-confetti';
 
 export default function BookPage() {
-  const { tours, addBooking } = useApp();
-  const [selectedTourId, setSelectedTourId] = useState<string>(tours[0]?.id || 'south-goa-tour');
+  const { tours, casinoVenues, activeBookingTour, addBooking } = useApp();
+
+  const allAvailableTours = React.useMemo(() => {
+    const casinoTours = (casinoVenues || []).flatMap((venue) =>
+      venue.packages.map((pkg) => ({
+        id: `casino-${pkg.id}`,
+        slug: `casino-${pkg.id}`,
+        title: `🎰 ${venue.name} — ${pkg.name}`,
+        tagline: pkg.name,
+        price: pkg.price,
+        originalPrice: pkg.originalPrice || pkg.price + 500,
+        discount: pkg.discount || '',
+        duration: 'Evening Casino VIP Pass',
+        rating: 4.9,
+        reviewCount: 150,
+        heroMedia: pkg.image || venue.image,
+        thumbnails: [pkg.image || venue.image],
+        description: `${venue.name} ${pkg.name} VIP Gaming & Dining Pass.`,
+        placesCovered: [venue.name, venue.location],
+        tourRoute: `${venue.location} -> Feeder Boat -> Vessel`,
+        timings: '06:00 PM onwards',
+        inclusions: ['Feeder boat transfer', 'Buffet Dinner', 'Unlimited Drinks', 'Live Stage Shows'],
+        exclusions: [],
+        itinerary: []
+      }))
+    );
+
+    const list = [...tours, ...casinoTours];
+
+    if (activeBookingTour && !list.some((t) => t.id === activeBookingTour.id)) {
+      return [activeBookingTour, ...list];
+    }
+    return list;
+  }, [tours, casinoVenues, activeBookingTour]);
+
+  const [selectedTourId, setSelectedTourId] = useState<string>(() => {
+    return activeBookingTour?.id || tours[0]?.id || 'dudhsagar-tour';
+  });
+
+  React.useEffect(() => {
+    if (activeBookingTour) {
+      setSelectedTourId(activeBookingTour.id);
+    }
+  }, [activeBookingTour]);
+
   const [date, setDate] = useState<string>(() => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -25,7 +68,10 @@ export default function BookPage() {
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [bookingRef, setBookingRef] = useState<string>('');
 
-  const currentTour = tours.find((t) => t.id === selectedTourId) || tours[0];
+  const currentTour =
+    allAvailableTours.find((t) => t.id === selectedTourId) ||
+    activeBookingTour ||
+    allAvailableTours[0];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,7 +207,7 @@ export default function BookPage() {
                   onChange={(e) => setSelectedTourId(e.target.value)}
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white font-medium focus:border-amber-500 focus:outline-none"
                 >
-                  {tours.map((t) => (
+                  {allAvailableTours.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.title} — ₹{t.price} / person
                     </option>
