@@ -203,9 +203,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error?.code === 'auth/invalid-phone-number') {
         setOtpError('Invalid phone number. Please enter a valid 10-digit mobile number.');
       } else if (error?.code === 'auth/too-many-requests') {
-        setOtpError('SMS rate limit reached for this number. Add your number to Firebase Console -> Phone Auth Test Numbers for localhost testing.');
+        setOtpError('SMS rate limit reached. Please wait a few minutes or add your number to Firebase test numbers.');
+      } else if (error?.code === 'auth/operation-not-allowed' || error?.message?.includes('region enabled')) {
+        setOtpError('Phone Auth / India (+91) region is not enabled in Firebase Console. Enable Phone provider & India (+91) in Firebase Settings.');
       } else if (error?.message?.includes('already been rendered')) {
-        // Retry once if reCAPTCHA render race condition occurred
         setOtpError('reCAPTCHA reset. Please click Send OTP again.');
       } else {
         setOtpError(error?.message || 'Failed to send SMS OTP. Please try again.');
