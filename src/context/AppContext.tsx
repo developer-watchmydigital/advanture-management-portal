@@ -8,6 +8,7 @@ import { INITIAL_HERO_SLIDES } from '@/data/initialHeroSlides';
 import { INITIAL_CINEMATIC_DATA } from '@/data/initialCinematic';
 import { INITIAL_GALLERY_ITEMS } from '@/data/initialGallery';
 import { INITIAL_CASINO_VENUES } from '@/data/initialCasinoTariffs';
+import { useAuth } from '@/context/AuthContext';
 
 interface AppContextType {
   tours: Tour[];
@@ -56,7 +57,10 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, openLoginModal, setPendingBookingAction } = useAuth();
+
   const [tours, setTours] = useState<Tour[]>(INITIAL_TOURS);
+
   const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(INITIAL_HERO_SLIDES);
@@ -267,11 +271,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const openBookingModal = (tour?: Tour) => {
+    if (!user) {
+      if (tour) setActiveBookingTour(tour);
+      setPendingBookingAction(() => () => {
+        if (tour) setActiveBookingTour(tour);
+        setIsBookingModalOpen(true);
+      });
+      openLoginModal();
+      return;
+    }
     if (tour) {
       setActiveBookingTour(tour);
     }
     setIsBookingModalOpen(true);
   };
+
 
   return (
     <AppContext.Provider

@@ -14,7 +14,7 @@ export const INITIAL_CASINO_VENUES: CasinoVenue[] = [
       {
         id: 'royale-classic',
         name: 'CLASSIC package',
-        price: 4400,
+        price: 4700,
         originalPrice: 4500,
         otpcWorth: 2000,
         liquorTypeLabel: 'UNLIMITED HOUSE BRAND LIQUOR',
@@ -60,7 +60,7 @@ export const INITIAL_CASINO_VENUES: CasinoVenue[] = [
       {
         id: 'royale-premium',
         name: 'PREMIUM package',
-        price: 4900,
+        price: 5200,
         originalPrice: 5000,
         otpcWorth: 2000,
         liquorTypeLabel: 'UNLIMITED IMFL LIQUOR',
@@ -102,7 +102,7 @@ export const INITIAL_CASINO_VENUES: CasinoVenue[] = [
       {
         id: 'royale-elite',
         name: 'ELITE package',
-        price: 5900,
+        price: 6200,
         originalPrice: 6000,
         otpcWorth: 2000,
         liquorTypeLabel: 'UNLIMITED IMPORTED LIQUOR',
@@ -140,7 +140,7 @@ export const INITIAL_CASINO_VENUES: CasinoVenue[] = [
       {
         id: 'royale-ladies-classic',
         name: 'LADIES CLASSIC package',
-        price: 2900,
+        price: 3200,
         originalPrice: 3200,
         otpcWorth: 1000,
         liquorTypeLabel: 'ALCOHOL AS PER CLASSIC PACKAGE',
@@ -170,7 +170,7 @@ export const INITIAL_CASINO_VENUES: CasinoVenue[] = [
       {
         id: 'royale-child-teens',
         name: 'CHILD & TEENS package',
-        price: 1500,
+        price: 1800,
         originalPrice: 1800,
         otpcWorth: 0,
         liquorTypeLabel: 'NON-ALCOHOLIC & MOCKTAILS',
@@ -212,7 +212,7 @@ export const INITIAL_CASINO_VENUES: CasinoVenue[] = [
       {
         id: 'jaqk-classic',
         name: 'CLASSIC package',
-        price: 2400,
+        price: 2700,
         originalPrice: 2500,
         otpcWorth: 1000,
         liquorTypeLabel: 'UNLIMITED HOUSE BRAND LIQUOR',
@@ -243,7 +243,7 @@ export const INITIAL_CASINO_VENUES: CasinoVenue[] = [
       {
         id: 'jaqk-premium',
         name: 'PREMIUM package',
-        price: 2900,
+        price: 3200,
         originalPrice: 3000,
         otpcWorth: 1000,
         liquorTypeLabel: 'UNLIMITED IMFL LIQUOR',
@@ -275,7 +275,7 @@ export const INITIAL_CASINO_VENUES: CasinoVenue[] = [
       {
         id: 'jaqk-elite',
         name: 'ELITE package',
-        price: 3400,
+        price: 3700,
         originalPrice: 3500,
         otpcWorth: 1000,
         liquorTypeLabel: 'UNLIMITED IMPORTED LIQUOR',
@@ -308,7 +308,7 @@ export const INITIAL_CASINO_VENUES: CasinoVenue[] = [
       {
         id: 'jaqk-child-teens',
         name: 'CHILD & TEENS package',
-        price: 1250,
+        price: 1550,
         originalPrice: 1500,
         otpcWorth: 0,
         liquorTypeLabel: 'NON-ALCOHOLIC & MOCKTAILS',

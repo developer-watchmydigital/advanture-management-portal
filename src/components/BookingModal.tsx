@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
-import { X, Calendar, Users, MapPin, Phone, User, FileText, CheckCircle2, MessageCircle, Sparkles } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { X, Calendar, Users, MapPin, Phone, User, FileText, CheckCircle2, MessageCircle, Sparkles, LogIn } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function BookingModal() {
@@ -15,6 +16,8 @@ export default function BookingModal() {
     casinoVenues,
     addBooking
   } = useApp();
+
+  const { user, openLoginModal, setPendingBookingAction } = useAuth();
 
   // Combine regular tours and casino VIP packages so any package can be selected
   const allAvailableTours = useMemo(() => {
@@ -74,6 +77,14 @@ export default function BookingModal() {
     }
   }, [activeBookingTour, isBookingModalOpen, allAvailableTours]);
 
+  // Auto-fill name and phone from logged-in user profile
+  useEffect(() => {
+    if (user && isBookingModalOpen) {
+      if (!customerName && user.displayName) setCustomerName(user.displayName);
+      if (!customerPhone && user.phone) setCustomerPhone(user.phone);
+    }
+  }, [user, isBookingModalOpen]);
+
   if (!isBookingModalOpen) return null;
 
   const currentTour =
@@ -83,12 +94,23 @@ export default function BookingModal() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Gate: require login before booking
+    if (!user) {
+      setPendingBookingAction(() => () => {
+        setIsBookingModalOpen(true);
+      });
+      openLoginModal();
+      return;
+    }
+
     if (!customerName || !customerPhone || !date || !pickupLocation) {
       alert('Please fill in all required fields (Name, Phone, Date, Pickup Location).');
       return;
     }
 
     const booking = addBooking({
+      userId: user.id,
       tourId: currentTour?.id || 'general',
       tourTitle: currentTour?.title || 'Goa Tour',
       date,

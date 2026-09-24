@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
-import { Tour, Booking, HeroSlide, GalleryItem, CasinoVenue, CasinoTierPackage } from '@/types';
+import { Tour, Booking, HeroSlide, GalleryItem, CasinoVenue, CasinoTierPackage, AppUser, LoginLog } from '@/types';
 import {
   Lock,
   Plus,
@@ -83,8 +83,27 @@ export default function AdminPage() {
   // Mobile Navigation Sidebar Drawer State
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'hero' | 'cinematic' | 'tours' | 'casino' | 'gallery' | 'reviews'
+    'dashboard' | 'hero' | 'cinematic' | 'tours' | 'casino' | 'gallery' | 'reviews' | 'users'
   >('dashboard');
+
+  // User Logins & Logs State
+  const [registeredUsers, setRegisteredUsers] = useState<AppUser[]>([]);
+  const [loginLogs, setLoginLogs] = useState<LoginLog[]>([]);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const u = JSON.parse(localStorage.getItem('goa_all_users') || '[]');
+        setRegisteredUsers(u);
+        const l = JSON.parse(localStorage.getItem('goa_login_logs') || '[]');
+        setLoginLogs(l);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [activeTab]);
+
 
   // Date Filter State for Dashboard Analytics
   const [datePreset, setDatePreset] = useState<'today' | '7days' | 'thisMonth' | 'all' | 'custom'>('all');
@@ -95,6 +114,8 @@ export default function AdminPage() {
   const [bookingModalLead, setBookingModalLead] = useState<Booking | null>(null);
   const [modalAmount, setModalAmount] = useState<number>(1499);
   const [modalPaymentMode, setModalPaymentMode] = useState<'cod' | 'prepaid'>('cod');
+  const [modalStatus, setModalStatus] = useState<Booking['status']>('booked');
+
 
   // Tour Package Edit Modal State
   const [isTourModalOpen, setIsTourModalOpen] = useState(false);
@@ -254,6 +275,7 @@ export default function AdminPage() {
     setBookingModalLead(lead);
     setModalAmount(lead.amount || 1499);
     setModalPaymentMode(lead.paymentMode || 'cod');
+    setModalStatus(lead.status || 'booked');
   };
 
   const handleSaveBookingModal = () => {
@@ -261,10 +283,11 @@ export default function AdminPage() {
     confirmBookingWithDetails(bookingModalLead.id, {
       amount: Number(modalAmount),
       paymentMode: modalPaymentMode,
-      status: 'booked'
+      status: modalStatus
     });
     setBookingModalLead(null);
   };
+
 
   // Tour Package Edit Helpers
   const openNewTourModal = () => {
@@ -740,6 +763,19 @@ export default function AdminPage() {
                 <Star className="w-4 h-4" />
                 <span>7. Reviews</span>
               </button>
+
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`w-full flex items-center space-x-3 px-3.5 py-3 rounded-xl transition ${
+                  activeTab === 'users'
+                    ? 'bg-amber-500 text-zinc-950 shadow-md'
+                    : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
+                }`}
+              >
+                <Users className="w-4 h-4 text-emerald-400" />
+                <span>8. User Logins & Logs</span>
+              </button>
+
             </nav>
 
             {/* Sidebar Bottom Actions */}
@@ -789,7 +825,9 @@ export default function AdminPage() {
                 { id: 'tours', label: '4. Top Packages', icon: Package },
                 { id: 'casino', label: '5. Casino Tariffs', icon: Ticket },
                 { id: 'gallery', label: '6. Manage Gallery', icon: Camera },
-                { id: 'reviews', label: '7. Reviews Record', icon: Star }
+                { id: 'reviews', label: '7. Reviews Record', icon: Star },
+                { id: 'users', label: '8. User Logins & Logs', icon: Users }
+
               ].map((t) => {
                 const Icon = t.icon;
                 return (
@@ -1011,6 +1049,8 @@ export default function AdminPage() {
                                       ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                                       : b.status === 'contacted'
                                       ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                      : b.status === 'refunded'
+                                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
                                       : b.status === 'cancelled'
                                       ? 'bg-red-500/20 text-red-400 border border-red-500/30'
                                       : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
@@ -1019,26 +1059,38 @@ export default function AdminPage() {
                                   {b.status}
                                 </span>
                               </td>
-                              <td className="py-3 px-3 text-right space-x-1 shrink-0">
-                                <button
-                                  onClick={() => updateBookingStatus(b.id, 'contacted')}
-                                  className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-blue-400 font-bold rounded-lg transition"
+                              <td className="py-3 px-3 text-right">
+                                <select
+                                  value={b.status}
+                                  onChange={(e) => {
+                                    const val = e.target.value as Booking['status'];
+                                    if (val === 'booked') {
+                                      openConfirmBookedModal(b);
+                                    } else {
+                                      updateBookingStatus(b.id, val);
+                                    }
+                                  }}
+                                  className={`px-3 py-1.5 rounded-xl font-bold text-xs border focus:outline-none transition cursor-pointer ${
+                                    b.status === 'booked'
+                                      ? 'bg-emerald-950/90 text-emerald-400 border-emerald-500/50'
+                                      : b.status === 'contacted'
+                                      ? 'bg-blue-950/90 text-blue-400 border-blue-500/50'
+                                      : b.status === 'refunded'
+                                      ? 'bg-purple-950/90 text-purple-400 border-purple-500/50'
+                                      : b.status === 'cancelled'
+                                      ? 'bg-red-950/90 text-red-400 border-red-500/50'
+                                      : 'bg-amber-950/90 text-amber-400 border-amber-500/50'
+                                  }`}
                                 >
-                                  Contacted
-                                </button>
-                                <button
-                                  onClick={() => openConfirmBookedModal(b)}
-                                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition"
-                                >
-                                  Mark Booked
-                                </button>
-                                <button
-                                  onClick={() => updateBookingStatus(b.id, 'cancelled')}
-                                  className="px-2.5 py-1 bg-red-950/60 hover:bg-red-900 text-red-400 font-bold rounded-lg transition"
-                                >
-                                  Cancel
-                                </button>
+                                  <option value="pending" className="bg-zinc-900 text-amber-400">⏳ Pending</option>
+                                  <option value="contacted" className="bg-zinc-900 text-blue-400">📞 Contacted</option>
+                                  <option value="booked" className="bg-zinc-900 text-emerald-400">✓ Mark Booked</option>
+                                  <option value="cancelled" className="bg-zinc-900 text-red-400">❌ Cancelled</option>
+                                  <option value="refunded" className="bg-zinc-900 text-purple-400">💸 Refunded</option>
+                                </select>
                               </td>
+
+
                             </tr>
                           ))}
                         </tbody>
@@ -1676,6 +1728,199 @@ export default function AdminPage() {
                 </div>
               </div>
             )}
+
+            {/* TAB 8: USER LOGINS & ACTIVITY LOGS */}
+            {activeTab === 'users' && (
+              <div className="space-y-6">
+                {/* Top Banner */}
+                <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-white font-serif flex items-center space-x-2">
+                      <Users className="w-5 h-5 text-emerald-400" />
+                      <span>User Accounts & Login Activity Logs</span>
+                    </h2>
+                    <p className="text-xs text-zinc-400 mt-1">
+                      Monitor all user registrations, auth channels (Email OTP, Phone OTP, Google Login), exact timestamps, and booking conversion statuses.
+                    </p>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search users by name, phone, email..."
+                      value={userSearchQuery}
+                      onChange={(e) => setUserSearchQuery(e.target.value)}
+                      className="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-xs text-white placeholder-zinc-500 w-full md:w-64 focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Analytics Summary Cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl">
+                    <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Total Registered Users</span>
+                    <span className="text-2xl font-black text-white">{registeredUsers.length}</span>
+                  </div>
+                  <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl">
+                    <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Total Logins Recorded</span>
+                    <span className="text-2xl font-black text-amber-400">{loginLogs.length}</span>
+                  </div>
+                  <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl">
+                    <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Users With Bookings</span>
+                    <span className="text-2xl font-black text-emerald-400">
+                      {registeredUsers.filter(u => bookings.some(b => b.userId === u.id || b.customerPhone === u.phone || (u.email && b.customerName.toLowerCase() === u.displayName.toLowerCase()))).length}
+                    </span>
+                  </div>
+                  <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl">
+                    <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Conversion Rate</span>
+                    <span className="text-2xl font-black text-cyan-400">
+                      {registeredUsers.length > 0
+                        ? Math.round((registeredUsers.filter(u => bookings.some(b => b.userId === u.id || b.customerPhone === u.phone)).length / registeredUsers.length) * 100)
+                        : 0}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Registered Users Table */}
+                <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 space-y-4 shadow-xl">
+                  <h3 className="text-sm font-extrabold uppercase tracking-wider text-amber-400 flex items-center space-x-2">
+                    <Users className="w-4 h-4" />
+                    <span>Registered User Accounts ({registeredUsers.length})</span>
+                  </h3>
+
+                  {registeredUsers.length === 0 ? (
+                    <div className="text-center py-8 text-xs text-zinc-500 bg-zinc-950/50 rounded-2xl border border-zinc-800/80">
+                      No user accounts registered yet. Click &quot;Book Now&quot; or &quot;Login&quot; on the website to create a test user!
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-zinc-800 text-zinc-400 font-bold uppercase text-[10px]">
+                            <th className="py-3 px-3">User Name</th>
+                            <th className="py-3 px-3">Contact (Email/Phone)</th>
+                            <th className="py-3 px-3">Auth Method</th>
+                            <th className="py-3 px-3">Registered On</th>
+                            <th className="py-3 px-3">Booking Status</th>
+                            <th className="py-3 px-3">Bookings Count</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-800/60">
+                          {registeredUsers
+                            .filter(u => !userSearchQuery || u.displayName.toLowerCase().includes(userSearchQuery.toLowerCase()) || (u.email && u.email.toLowerCase().includes(userSearchQuery.toLowerCase())) || (u.phone && u.phone.includes(userSearchQuery)))
+                            .map((u) => {
+                              const userBookings = bookings.filter(b => b.userId === u.id || b.customerPhone === u.phone);
+                              const hasBooking = userBookings.length > 0;
+                              return (
+                                <tr key={u.id} className="hover:bg-zinc-800/40 transition">
+                                  <td className="py-3 px-3 font-bold text-white flex items-center space-x-2">
+                                    <div className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-black text-xs shrink-0">
+                                      {u.displayName.charAt(0).toUpperCase()}
+                                    </div>
+                                    <span>{u.displayName}</span>
+                                  </td>
+                                  <td className="py-3 px-3 text-zinc-300 font-mono">
+                                    {u.email || u.phone || 'N/A'}
+                                  </td>
+                                  <td className="py-3 px-3">
+                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                      u.loginMethod === 'google'
+                                        ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                        : u.loginMethod === 'phone'
+                                        ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                                        : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                    }`}>
+                                      {u.loginMethod}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-3 text-zinc-400">
+                                    {new Date(u.createdAt).toLocaleDateString()} {new Date(u.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </td>
+                                  <td className="py-3 px-3">
+                                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+                                      hasBooking
+                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                                        : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
+                                    }`}>
+                                      {hasBooking ? '✓ Booking Done' : 'No Booking Yet'}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-3 font-bold text-amber-400">
+                                    {userBookings.length} Lead(s)
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Login History Logs Table */}
+                <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 space-y-4 shadow-xl">
+                  <h3 className="text-sm font-extrabold uppercase tracking-wider text-emerald-400 flex items-center space-x-2">
+                    <Clock className="w-4 h-4" />
+                    <span>Real-Time Login Activity Logs ({loginLogs.length})</span>
+                  </h3>
+
+                  {loginLogs.length === 0 ? (
+                    <div className="text-center py-8 text-xs text-zinc-500 bg-zinc-950/50 rounded-2xl border border-zinc-800/80">
+                      No login sessions recorded yet. Log in from the live website to record your first log entry!
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-zinc-800 text-zinc-400 font-bold uppercase text-[10px]">
+                            <th className="py-3 px-3">Timestamp</th>
+                            <th className="py-3 px-3">User Name</th>
+                            <th className="py-3 px-3">Contact Detail</th>
+                            <th className="py-3 px-3">Method</th>
+                            <th className="py-3 px-3">Booking Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-800/60">
+                          {loginLogs
+                            .filter(log => !userSearchQuery || log.userName.toLowerCase().includes(userSearchQuery.toLowerCase()) || (log.userEmail && log.userEmail.toLowerCase().includes(userSearchQuery.toLowerCase())) || (log.userPhone && log.userPhone.includes(userSearchQuery)))
+                            .map((log) => {
+                              const userBookings = bookings.filter(b => b.userId === log.userId || b.customerPhone === log.userPhone);
+                              const hasBooking = userBookings.length > 0;
+                              return (
+                                <tr key={log.id} className="hover:bg-zinc-800/40 transition">
+                                  <td className="py-3 px-3 font-mono text-zinc-400">
+                                    {new Date(log.timestamp).toLocaleDateString()} {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </td>
+                                  <td className="py-3 px-3 font-bold text-white">
+                                    {log.userName}
+                                  </td>
+                                  <td className="py-3 px-3 text-zinc-300 font-mono">
+                                    {log.userEmail || log.userPhone || 'N/A'}
+                                  </td>
+                                  <td className="py-3 px-3">
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-zinc-800 text-amber-400 border border-amber-500/20">
+                                      {log.loginMethod}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-3">
+                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                      hasBooking
+                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                        : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
+                                    }`}>
+                                      {hasBooking ? '✓ Booking Completed' : 'Pending Booking'}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
           </section>
         </div>
       )}
@@ -1718,7 +1963,23 @@ export default function AdminPage() {
                   <option value="prepaid">Online Prepaid (Added to Total Revenue)</option>
                 </select>
               </div>
+
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">Booking Status Action</label>
+                <select
+                  value={modalStatus}
+                  onChange={(e) => setModalStatus(e.target.value as any)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white font-bold"
+                >
+                  <option value="booked">✓ Confirmed & Booked</option>
+                  <option value="contacted">📞 Contacted Lead</option>
+                  <option value="pending">⏳ Pending Inquiries</option>
+                  <option value="cancelled">❌ Cancelled</option>
+                  <option value="refunded">💸 Refunded</option>
+                </select>
+              </div>
             </div>
+
 
             <div className="flex items-center justify-end space-x-2 pt-3 border-t border-zinc-800">
               <button

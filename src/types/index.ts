@@ -42,8 +42,30 @@ export interface Review {
   status: 'approved' | 'pending';
 }
 
+export interface AppUser {
+  id: string;
+  displayName: string;
+  email?: string;
+  phone?: string;
+  photoURL?: string;
+  loginMethod: 'email' | 'phone' | 'google';
+  createdAt: string;
+}
+
+export interface LoginLog {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail?: string;
+  userPhone?: string;
+  loginMethod: 'email' | 'phone' | 'google';
+  timestamp: string;
+  hasBooked?: boolean;
+}
+
 export interface Booking {
   id: string;
+  userId?: string;
   tourId: string;
   tourTitle: string;
   date: string;
@@ -52,7 +74,7 @@ export interface Booking {
   customerPhone: string;
   pickupLocation: string;
   specialRequirements: string;
-  status: 'pending' | 'contacted' | 'booked' | 'cancelled';
+  status: 'pending' | 'contacted' | 'booked' | 'cancelled' | 'refunded';
   paymentMode?: 'cod' | 'prepaid';
   paymentStatus?: 'pending' | 'collected';
   amount?: number;
