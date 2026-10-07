@@ -65,6 +65,7 @@ export default function AdminPage() {
     updateReviewVideo,
     updateBookingStatus,
     confirmBookingWithDetails,
+    refreshBookingsFromDB,
     updateHeroSlide,
     updateCinematicData,
     addGalleryItem,
@@ -79,6 +80,8 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [heroSaveMessage, setHeroSaveMessage] = useState<string | null>(null);
+  const [cinematicSaveMessage, setCinematicSaveMessage] = useState<string | null>(null);
 
   // Mobile Navigation Sidebar Drawer State
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -113,7 +116,7 @@ export default function AdminPage() {
   // Lead Booking Confirmation Modal State
   const [bookingModalLead, setBookingModalLead] = useState<Booking | null>(null);
   const [modalAmount, setModalAmount] = useState<number>(1499);
-  const [modalPaymentMode, setModalPaymentMode] = useState<'cod' | 'prepaid'>('cod');
+  const [modalPaymentMode, setModalPaymentMode] = useState<'cod' | 'prepaid' | 'advance_30'>('cod');
   const [modalStatus, setModalStatus] = useState<Booking['status']>('booked');
 
 
@@ -254,14 +257,22 @@ export default function AdminPage() {
   // Financial KPI calculations
   const totalRevenue = useMemo(() => {
     return filteredBookings
-      .filter((b) => b.status === 'booked' && b.paymentMode === 'prepaid')
-      .reduce((sum, b) => sum + (b.amount || 0), 0);
+      .filter((b) => b.status !== 'cancelled' && b.status !== 'refunded')
+      .reduce((sum, b) => {
+        if (b.paymentMode === 'prepaid') return sum + (b.amount || 0);
+        if (b.paymentMode === 'advance_30') return sum + (b.advancePaid || Math.round((b.amount || 0) * 0.3));
+        return sum;
+      }, 0);
   }, [filteredBookings]);
 
   const pendingCodAmount = useMemo(() => {
     return filteredBookings
-      .filter((b) => b.status === 'booked' && b.paymentMode === 'cod')
-      .reduce((sum, b) => sum + (b.amount || 0), 0);
+      .filter((b) => b.status !== 'cancelled' && b.status !== 'refunded')
+      .reduce((sum, b) => {
+        if (b.paymentMode === 'cod') return sum + (b.amount || 0);
+        if (b.paymentMode === 'advance_30') return sum + (b.balanceDue ?? Math.round((b.amount || 0) * 0.7));
+        return sum;
+      }, 0);
   }, [filteredBookings]);
 
   const cancelledBookingsCount = useMemo(() => {
@@ -993,7 +1004,16 @@ export default function AdminPage() {
 
                 {/* Leads / Inquiries Management Table */}
                 <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 space-y-4 shadow-xl">
-                  <h2 className="text-lg font-bold text-white font-serif">Customer Leads & Inquiries</h2>
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h2 className="text-lg font-bold text-white font-serif">Customer Leads & Inquiries</h2>
+                    <button
+                      onClick={() => refreshBookingsFromDB()}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Sync Live DB</span>
+                    </button>
+                  </div>
 
                   {filteredBookings.length === 0 ? (
                     <div className="p-8 text-center bg-zinc-950 rounded-2xl text-zinc-400 text-xs border border-zinc-800">
@@ -1033,14 +1053,25 @@ export default function AdminPage() {
                                   className={`text-[10px] font-black px-2 py-0.5 rounded uppercase ${
                                     b.paymentMode === 'prepaid'
                                       ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                      : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                      : b.paymentMode === 'advance_30'
+                                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                      : 'bg-zinc-800 text-zinc-300 border border-zinc-700'
                                   }`}
                                 >
-                                  {b.paymentMode === 'prepaid' ? 'PREPAID ONLINE' : 'COD CASH'}
+                                  {b.paymentMode === 'prepaid'
+                                    ? '100% PREPAID'
+                                    : b.paymentMode === 'advance_30'
+                                    ? '⚡ 30% ADVANCE PAID'
+                                    : 'COD CASH'}
                                 </span>
                               </td>
-                              <td className="py-3 px-3 font-mono font-bold text-white">
-                                ₹{b.amount || 0}
+                              <td className="py-3 px-3 space-y-0.5">
+                                <span className="font-mono font-bold text-white block">₹{b.amount || 0}</span>
+                                {b.paymentMode === 'advance_30' && (
+                                  <span className="text-[10px] font-bold text-amber-400 block font-mono">
+                                    Paid: ₹{(b.advancePaid ?? Math.round((b.amount || 0) * 0.3)).toLocaleString('en-IN')} | Due: ₹{(b.balanceDue ?? Math.round((b.amount || 0) * 0.7)).toLocaleString('en-IN')}
+                                  </span>
+                                )}
                               </td>
                               <td className="py-3 px-3">
                                 <span
@@ -1104,11 +1135,19 @@ export default function AdminPage() {
             {/* TAB 2: HERO SECTION MANAGER */}
             {activeTab === 'hero' && (
               <div className="space-y-6">
-                <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl shadow-xl">
-                  <h2 className="text-xl font-bold text-white font-serif">Manage Hero Carousel Slides</h2>
-                  <p className="text-xs text-zinc-400">
-                    Edit background photos/videos, titles, subtitles, and CTA buttons for all 3 hero carousel pages.
-                  </p>
+                <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-white font-serif">Manage Hero Carousel Slides</h2>
+                    <p className="text-xs text-zinc-400">
+                      Edit background photos/videos, titles, subtitles, and CTA buttons for all 3 hero carousel pages.
+                    </p>
+                  </div>
+                  {heroSaveMessage && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-2xl text-xs font-bold animate-pulse">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      {heroSaveMessage}
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 gap-6">
@@ -1121,6 +1160,17 @@ export default function AdminPage() {
                         <span className="text-xs font-black uppercase text-amber-400">
                           SLIDE #{idx + 1} ({slide.badge})
                         </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setHeroSaveMessage(`Slide #${idx + 1} saved successfully!`);
+                            setTimeout(() => setHeroSaveMessage(null), 3500);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black rounded-xl text-xs transition shadow-md hover:shadow-amber-500/20 active:scale-95 cursor-pointer"
+                        >
+                          <Save className="w-4 h-4" />
+                          Save Slide #{idx + 1}
+                        </button>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
@@ -1151,6 +1201,32 @@ export default function AdminPage() {
                             value={slide.subtitle}
                             onChange={(e) => updateHeroSlide(slide.id, { subtitle: e.target.value })}
                             className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-white"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-amber-400 font-bold mb-1">
+                            CTA Button Text (Call To Action)
+                          </label>
+                          <input
+                            type="text"
+                            value={slide.ctaText || ''}
+                            onChange={(e) => updateHeroSlide(slide.id, { ctaText: e.target.value })}
+                            placeholder="e.g. Explore Packages"
+                            className="w-full bg-zinc-950 border border-amber-500/30 focus:border-amber-400 rounded-xl px-3 py-2 text-amber-300 font-bold"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-amber-400 font-bold mb-1">
+                            CTA Link Target URL
+                          </label>
+                          <input
+                            type="text"
+                            value={slide.ctaLink || ''}
+                            onChange={(e) => updateHeroSlide(slide.id, { ctaLink: e.target.value })}
+                            placeholder="e.g. #tours or /tours"
+                            className="w-full bg-zinc-950 border border-amber-500/30 focus:border-amber-400 rounded-xl px-3 py-2 text-amber-300 font-bold"
                           />
                         </div>
 
@@ -1195,7 +1271,7 @@ export default function AdminPage() {
                       </div>
 
                       {/* Preview */}
-                      <div className="h-36 rounded-2xl overflow-hidden relative border border-zinc-800 bg-zinc-950">
+                      <div className="h-44 rounded-2xl overflow-hidden relative border border-zinc-800 bg-zinc-950 shadow-inner">
                         {slide.mediaType === 'video' ? (
                           <video
                             src={slide.mediaUrl}
@@ -1211,12 +1287,40 @@ export default function AdminPage() {
                             className="w-full h-full object-cover"
                           />
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent p-4 flex flex-col justify-end">
-                          <span className="text-[10px] font-black text-amber-400 uppercase">
-                            {slide.badge}
-                          </span>
-                          <h4 className="text-sm font-bold text-white line-clamp-1">{slide.title}</h4>
+                        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/50 to-transparent p-4 flex flex-col justify-end">
+                          <div className="flex items-end justify-between">
+                            <div>
+                              <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">
+                                {slide.badge}
+                              </span>
+                              <h4 className="text-sm font-bold text-white line-clamp-1">{slide.title}</h4>
+                              <p className="text-[11px] text-zinc-300 line-clamp-1">{slide.subtitle}</p>
+                            </div>
+
+                            {/* Live CTA Button Preview */}
+                            <div className="px-3 py-1.5 bg-amber-500 text-zinc-950 font-black text-[11px] rounded-lg shadow-md whitespace-nowrap">
+                              {slide.ctaText || 'Explore Packages'} →
+                            </div>
+                          </div>
                         </div>
+                      </div>
+
+                      {/* Card Footer Save Action */}
+                      <div className="flex justify-between items-center pt-3 border-t border-zinc-800">
+                        <span className="text-[11px] text-zinc-400">
+                          CTA Link: <code className="text-amber-400 font-mono">{slide.ctaLink || '#tours'}</code>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setHeroSaveMessage(`Slide #${idx + 1} ("${slide.title}") saved successfully!`);
+                            setTimeout(() => setHeroSaveMessage(null), 3500);
+                          }}
+                          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-black rounded-xl text-xs transition shadow-lg shadow-amber-500/25 active:scale-95 cursor-pointer uppercase tracking-wider"
+                        >
+                          <Save className="w-4 h-4" />
+                          Save Slide #{idx + 1} CTA & Details
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -1323,6 +1427,28 @@ export default function AdminPage() {
                       </div>
                     ))}
                   </div>
+
+                  <div className="flex justify-between items-center pt-2 border-t border-zinc-800/80">
+                    {cinematicSaveMessage ? (
+                      <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
+                        <CheckCircle2 className="w-4 h-4" />
+                        {cinematicSaveMessage}
+                      </div>
+                    ) : (
+                      <span />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCinematicSaveMessage('Cinematic Showcase details saved successfully!');
+                        setTimeout(() => setCinematicSaveMessage(null), 3500);
+                      }}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-black rounded-xl text-xs transition shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer"
+                    >
+                      <Save className="w-4 h-4" />
+                      Save Cinematic Showcase Changes
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -1338,13 +1464,13 @@ export default function AdminPage() {
                     </span>
                   </div>
 
-                  <button
-                    onClick={openNewTourModal}
+                  <Link
+                    href="/admin/edit-tour/new"
                     className="px-5 py-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs rounded-xl shadow-lg flex items-center space-x-1.5 transition"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Create New Package</span>
-                  </button>
+                  </Link>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1388,13 +1514,13 @@ export default function AdminPage() {
                         </Link>
 
                         <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => openEditTourModal(tour)}
-                            className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl transition flex items-center space-x-1"
+                          <Link
+                            href={`/admin/edit-tour/${tour.id}`}
+                            className="px-3.5 py-1.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500 hover:text-zinc-950 text-amber-400 text-xs font-bold rounded-xl transition flex items-center space-x-1"
                           >
                             <Edit className="w-3.5 h-3.5" />
                             <span>Edit Details</span>
-                          </button>
+                          </Link>
 
                           <button
                             onClick={() => {
@@ -1440,13 +1566,13 @@ export default function AdminPage() {
                       <span>Add New Vessel</span>
                     </button>
 
-                    <button
-                      onClick={openNewCasinoPkgModal}
+                    <Link
+                      href={`/admin/edit-casino-pkg/${selectedCasinoAdminVenueId}/new`}
                       className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs rounded-xl shadow-lg flex items-center space-x-1.5 transition"
                     >
                       <Plus className="w-4 h-4" />
                       <span>Create New Tariff Package</span>
-                    </button>
+                    </Link>
                   </div>
                 </div>
 
@@ -1547,13 +1673,13 @@ export default function AdminPage() {
                           </div>
 
                           <div className="flex items-center justify-end space-x-2 pt-3 border-t border-zinc-800/80">
-                            <button
-                              onClick={() => openEditCasinoPkgModal(pkg)}
-                              className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl flex items-center space-x-1"
+                            <Link
+                              href={`/admin/edit-casino-pkg/${activeAdminVenue.id}/${pkg.id}`}
+                              className="px-3.5 py-1.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500 hover:text-zinc-950 text-amber-400 text-xs font-bold rounded-xl transition flex items-center space-x-1"
                             >
                               <Edit className="w-3.5 h-3.5 text-amber-400" />
                               <span>Edit Tariff & Drinks</span>
-                            </button>
+                            </Link>
                             <button
                               onClick={() => handleDeleteCasinoPkg(pkg.id)}
                               className="p-1.5 bg-red-950/40 text-red-400 hover:bg-red-900 rounded-xl border border-red-500/20"
@@ -1959,8 +2085,9 @@ export default function AdminPage() {
                   onChange={(e) => setModalPaymentMode(e.target.value as any)}
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white font-bold"
                 >
-                  <option value="cod">COD Cash on Pickup (Pending Payment)</option>
-                  <option value="prepaid">Online Prepaid (Added to Total Revenue)</option>
+                  <option value="advance_30">⚡ 30% Advance Token Paid Online</option>
+                  <option value="prepaid">💳 100% Full Online Prepaid</option>
+                  <option value="cod">💵 COD Cash on Pickup (Pending Payment)</option>
                 </select>
               </div>
 

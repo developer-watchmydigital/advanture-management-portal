@@ -75,9 +75,13 @@ export interface Booking {
   pickupLocation: string;
   specialRequirements: string;
   status: 'pending' | 'contacted' | 'booked' | 'cancelled' | 'refunded';
-  paymentMode?: 'cod' | 'prepaid';
-  paymentStatus?: 'pending' | 'collected';
+  paymentMode?: 'cod' | 'prepaid' | 'advance_30';
+  paymentStatus?: 'pending' | 'partial_paid' | 'collected';
   amount?: number;
+  advancePaid?: number;
+  balanceDue?: number;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
   createdAt: string;
 }
 

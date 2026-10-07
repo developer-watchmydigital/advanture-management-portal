@@ -8,6 +8,7 @@ import { INITIAL_HERO_SLIDES } from '@/data/initialHeroSlides';
 import { INITIAL_CINEMATIC_DATA } from '@/data/initialCinematic';
 import { INITIAL_GALLERY_ITEMS } from '@/data/initialGallery';
 import { INITIAL_CASINO_VENUES } from '@/data/initialCasinoTariffs';
+import { INITIAL_BOOKINGS } from '@/data/initialBookings';
 import { useAuth } from '@/context/AuthContext';
 
 interface AppContextType {
@@ -37,9 +38,21 @@ interface AppContextType {
   deleteReview: (id: string) => void;
   updateReviewVideo: (url: string) => void;
 
-  addBooking: (booking: Omit<Booking, 'id' | 'createdAt' | 'status'>) => Booking;
+  addBooking: (booking: Omit<Booking, 'id' | 'createdAt' | 'status'> & Partial<Booking>) => Booking;
   updateBookingStatus: (id: string, status: Booking['status']) => void;
-  confirmBookingWithDetails: (id: string, details: { amount: number; paymentMode: 'cod' | 'prepaid'; status?: Booking['status'] }) => void;
+  confirmBookingWithDetails: (
+    id: string,
+    details: {
+      amount: number;
+      paymentMode: 'cod' | 'prepaid' | 'advance_30';
+      status?: Booking['status'];
+      advancePaid?: number;
+      balanceDue?: number;
+      razorpayPaymentId?: string;
+      razorpayOrderId?: string;
+    }
+  ) => void;
+  refreshBookingsFromDB: () => Promise<void>;
 
   updateHeroSlide: (id: string, slideData: Partial<HeroSlide>) => void;
   updateCinematicData: (data: Partial<CinematicShowcaseData>) => void;
@@ -62,7 +75,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [tours, setTours] = useState<Tour[]>(INITIAL_TOURS);
 
   const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>(INITIAL_BOOKINGS);
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(INITIAL_HERO_SLIDES);
   const [cinematicData, setCinematicData] = useState<CinematicShowcaseData>(INITIAL_CINEMATIC_DATA);
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(INITIAL_GALLERY_ITEMS);
@@ -73,7 +86,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isBookingModalOpen, setIsBookingModalOpen] = useState<boolean>(false);
   const [isAddReviewModalOpen, setIsAddReviewModalOpen] = useState<boolean>(false);
 
-  // Load state from localStorage on mount
+  // Fetch bookings directly from PostgreSQL database API
+  const refreshBookingsFromDB = async () => {
+    try {
+      const res = await fetch('/api/bookings');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.bookings)) {
+          setBookings(data.bookings);
+          try { localStorage.setItem('goa_bookings', JSON.stringify(data.bookings)); } catch (e) {}
+        }
+      }
+    } catch (err) {
+      console.error('Failed to sync bookings from DB API:', err);
+    }
+  };
+
+  // Load state from localStorage on mount & sync with DB API
   useEffect(() => {
     try {
       const savedTours = localStorage.getItem('goa_tours');
@@ -102,6 +131,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e) {
       console.error('Error loading from localStorage', e);
     }
+
+    refreshBookingsFromDB();
   }, []);
 
   // Save changes helper functions
@@ -190,35 +221,103 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Booking actions
-  const addBooking = (bookingData: Omit<Booking, 'id' | 'createdAt' | 'status'>): Booking => {
+  const addBooking = (bookingData: Omit<Booking, 'id' | 'createdAt' | 'status'> & Partial<Booking>): Booking => {
+    const totalAmt = bookingData.amount || 0;
+    const isAdvance = bookingData.paymentMode === 'advance_30';
+    const isPrepaid = bookingData.paymentMode === 'prepaid';
+    const calculatedAdvance = bookingData.advancePaid ?? (isAdvance ? Math.round(totalAmt * 0.3) : isPrepaid ? totalAmt : 0);
+    const calculatedBalance = bookingData.balanceDue ?? (totalAmt - calculatedAdvance);
+
     const newBooking: Booking = {
-      ...bookingData,
       id: `BK-${Math.floor(100000 + Math.random() * 900000)}`,
-      status: 'pending',
-      paymentMode: 'cod',
-      paymentStatus: 'pending',
-      createdAt: new Date().toISOString()
+      status: bookingData.status || 'pending',
+      paymentMode: bookingData.paymentMode || 'cod',
+      paymentStatus: isPrepaid ? 'collected' : isAdvance ? 'partial_paid' : 'pending',
+      amount: totalAmt,
+      advancePaid: calculatedAdvance,
+      balanceDue: calculatedBalance,
+      createdAt: new Date().toISOString(),
+      ...bookingData
     };
+
     const updated = [newBooking, ...bookings];
     saveBookings(updated);
+
+    // Save to Database API
+    fetch('/api/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newBooking)
+    }).catch(err => console.error('Failed to save booking to DB API:', err));
+
     return newBooking;
   };
 
   const updateBookingStatus = (id: string, status: Booking['status']) => {
     const updated = bookings.map(b => (b.id === id ? { ...b, status } : b));
     saveBookings(updated);
+
+    // Update DB API
+    fetch('/api/bookings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status })
+    }).catch(err => console.error('Failed to update booking status in DB API:', err));
   };
 
-  const confirmBookingWithDetails = (id: string, details: { amount: number; paymentMode: 'cod' | 'prepaid'; status?: Booking['status'] }) => {
-    const updated = bookings.map(b => {
+  const confirmBookingWithDetails = (
+    id: string,
+    details: {
+      amount: number;
+      paymentMode: 'cod' | 'prepaid' | 'advance_30';
+      status?: Booking['status'];
+      advancePaid?: number;
+      balanceDue?: number;
+      razorpayPaymentId?: string;
+      razorpayOrderId?: string;
+    }
+  ) => {
+    const updated = bookings.map((b) => {
       if (b.id === id) {
-        return {
+        const isAdvance = details.paymentMode === 'advance_30';
+        const isPrepaid = details.paymentMode === 'prepaid';
+        const calculatedAdvance = details.advancePaid ?? (isAdvance ? Math.round(details.amount * 0.3) : isPrepaid ? details.amount : 0);
+        const calculatedBalance = details.balanceDue ?? (details.amount - calculatedAdvance);
+
+        const updatedBooking = {
           ...b,
           status: details.status || ('booked' as const),
           amount: details.amount,
           paymentMode: details.paymentMode,
-          paymentStatus: details.paymentMode === 'prepaid' ? ('collected' as const) : ('pending' as const)
+          paymentStatus: isPrepaid
+            ? ('collected' as const)
+            : isAdvance
+            ? ('partial_paid' as const)
+            : ('pending' as const),
+          advancePaid: calculatedAdvance,
+          balanceDue: calculatedBalance,
+          razorpayPaymentId: details.razorpayPaymentId || b.razorpayPaymentId,
+          razorpayOrderId: details.razorpayOrderId || b.razorpayOrderId
         };
+
+        // Update DB API
+        fetch('/api/bookings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id,
+            status: updatedBooking.status,
+            amount: updatedBooking.amount,
+            paymentMode: updatedBooking.paymentMode,
+            paymentStatus: updatedBooking.paymentStatus,
+            advancePaid: updatedBooking.advancePaid,
+            balanceDue: updatedBooking.balanceDue,
+            razorpayPaymentId: updatedBooking.razorpayPaymentId,
+            razorpayOrderId: updatedBooking.razorpayOrderId,
+          })
+        }).catch(err => console.error('Failed to confirm booking in DB API:', err));
+
+        return updatedBooking;
       }
       return b;
     });
@@ -271,17 +370,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const openBookingModal = (tour?: Tour) => {
+    setActiveBookingTour(tour || null);
     if (!user) {
-      if (tour) setActiveBookingTour(tour);
       setPendingBookingAction(() => () => {
-        if (tour) setActiveBookingTour(tour);
+        setActiveBookingTour(tour || null);
         setIsBookingModalOpen(true);
       });
       openLoginModal();
       return;
-    }
-    if (tour) {
-      setActiveBookingTour(tour);
     }
     setIsBookingModalOpen(true);
   };
@@ -314,6 +410,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addBooking,
         updateBookingStatus,
         confirmBookingWithDetails,
+        refreshBookingsFromDB,
         updateHeroSlide,
         updateCinematicData,
         addGalleryItem,

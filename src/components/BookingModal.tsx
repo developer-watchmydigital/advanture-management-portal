@@ -6,6 +6,12 @@ import { useAuth } from '@/context/AuthContext';
 import { X, Calendar, Users, MapPin, Phone, User, FileText, CheckCircle2, MessageCircle, Sparkles, LogIn } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 export default function BookingModal() {
   const {
     isBookingModalOpen,
@@ -14,7 +20,8 @@ export default function BookingModal() {
     setActiveBookingTour,
     tours,
     casinoVenues,
-    addBooking
+    addBooking,
+    confirmBookingWithDetails
   } = useApp();
 
   const { user, openLoginModal, setPendingBookingAction } = useAuth();
@@ -60,8 +67,24 @@ export default function BookingModal() {
   const [customerPhone, setCustomerPhone] = useState<string>('');
   const [pickupLocation, setPickupLocation] = useState<string>('');
   const [specialRequirements, setSpecialRequirements] = useState<string>('');
+  const [paymentModeChoice, setPaymentModeChoice] = useState<'advance_30' | 'prepaid' | 'cod'>('advance_30');
+  const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [createdBookingId, setCreatedBookingId] = useState<string>('');
+  const [paymentDetails, setPaymentDetails] = useState<{ mode: string; status: string; id?: string; advancePaid?: number; balanceDue?: number }>({
+    mode: 'advance_30',
+    status: 'pending'
+  });
+
+  // Load Razorpay script dynamically
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !window.Razorpay) {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
 
   useEffect(() => {
     if (activeBookingTour) {
@@ -92,6 +115,125 @@ export default function BookingModal() {
     activeBookingTour ||
     allAvailableTours[0];
 
+  const totalAmount = (currentTour?.price || 0) * guestCount;
+  const advanceAmount30 = Math.round(totalAmount * 0.30);
+  const balanceDue30 = totalAmount - advanceAmount30;
+
+  const handleOnlineRazorpayPayment = async (booking: any, isPartialAdvance: boolean) => {
+    setIsProcessingPayment(true);
+    const chargeAmount = isPartialAdvance ? advanceAmount30 : totalAmount;
+
+    try {
+      // Step 1: Create Order via Server API for exact charge amount
+      const res = await fetch('/api/razorpay/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: chargeAmount,
+          bookingId: booking.id,
+          tourTitle: `${isPartialAdvance ? '30% Advance - ' : ''}${currentTour?.title || 'Goa Adventure'}`
+        })
+      });
+
+      const orderData = await res.json();
+
+      if (!res.ok || !orderData.orderId) {
+        throw new Error(orderData.error || 'Failed to initialize payment gateway.');
+      }
+
+      // Step 2: Open Razorpay Checkout Modal
+      const options = {
+        key: orderData.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TkKOz1sxpHIH97',
+        amount: orderData.amount,
+        currency: orderData.currency || 'INR',
+        name: 'Watch My Trip Adventure',
+        description: isPartialAdvance
+          ? `30% Advance Token (₹${advanceAmount30.toLocaleString('en-IN')}) for ${currentTour?.title}`
+          : `100% Full Payment for ${currentTour?.title}`,
+        image: '/logo.png',
+        order_id: orderData.orderId,
+        handler: async function (response: any) {
+          // Step 3: Verify Payment Signature via Server API
+          const verifyRes = await fetch('/api/razorpay/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              bookingId: booking.id
+            })
+          });
+
+          const verifyData = await verifyRes.json();
+
+          if (verifyRes.ok && verifyData.success) {
+            const modeKey = isPartialAdvance ? 'advance_30' : 'prepaid';
+            const paid = isPartialAdvance ? advanceAmount30 : totalAmount;
+            const due = isPartialAdvance ? balanceDue30 : 0;
+
+            confirmBookingWithDetails(booking.id, {
+              amount: totalAmount,
+              paymentMode: modeKey,
+              status: 'booked',
+              advancePaid: paid,
+              balanceDue: due,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpayOrderId: response.razorpay_order_id,
+            });
+
+            setPaymentDetails({
+              mode: isPartialAdvance ? '30% Advance Paid Online (Razorpay)' : '100% Full Prepaid (Razorpay)',
+              status: isPartialAdvance
+                ? `Advance ₹${paid.toLocaleString('en-IN')} Collected (Balance ₹${due.toLocaleString('en-IN')} Due on Pickup)`
+                : '100% Fully Paid ✓',
+              id: response.razorpay_payment_id,
+              advancePaid: paid,
+              balanceDue: due
+            });
+
+            setIsProcessingPayment(false);
+            setCreatedBookingId(booking.id);
+            setIsSuccess(true);
+
+            try {
+              confetti({
+                particleCount: 140,
+                spread: 85,
+                origin: { y: 0.6 }
+              });
+            } catch (err) {
+              console.error(err);
+            }
+          } else {
+            alert('Payment verification failed: ' + (verifyData.error || 'Invalid Signature'));
+            setIsProcessingPayment(false);
+          }
+        },
+        prefill: {
+          name: customerName,
+          email: user?.email || '',
+          contact: customerPhone
+        },
+        theme: {
+          color: '#f59e0b'
+        },
+        modal: {
+          ondismiss: function () {
+            setIsProcessingPayment(false);
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Razorpay Gateway Error. Falling back to COD.');
+      setIsProcessingPayment(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -109,6 +251,11 @@ export default function BookingModal() {
       return;
     }
 
+    const is30Adv = paymentModeChoice === 'advance_30';
+    const isPrep = paymentModeChoice === 'prepaid';
+    const paidVal = is30Adv ? advanceAmount30 : isPrep ? totalAmount : 0;
+    const dueVal = is30Adv ? balanceDue30 : isPrep ? 0 : totalAmount;
+
     const booking = addBooking({
       userId: user.id,
       tourId: currentTour?.id || 'general',
@@ -118,20 +265,47 @@ export default function BookingModal() {
       customerName,
       customerPhone,
       pickupLocation,
-      specialRequirements
+      specialRequirements,
+      amount: totalAmount,
+      advancePaid: paidVal,
+      balanceDue: dueVal,
+      paymentMode: paymentModeChoice,
+      paymentStatus: isPrep ? 'collected' : is30Adv ? 'partial_paid' : 'pending'
     });
 
     setCreatedBookingId(booking.id);
-    setIsSuccess(true);
 
-    try {
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
+    if (paymentModeChoice === 'advance_30') {
+      handleOnlineRazorpayPayment(booking, true);
+    } else if (paymentModeChoice === 'prepaid') {
+      handleOnlineRazorpayPayment(booking, false);
+    } else {
+      confirmBookingWithDetails(booking.id, {
+        amount: totalAmount,
+        paymentMode: 'cod',
+        status: 'booked',
+        advancePaid: 0,
+        balanceDue: totalAmount
       });
-    } catch (err) {
-      console.error(err);
+
+      setPaymentDetails({
+        mode: '100% Cash on Pickup (COD)',
+        status: `₹${totalAmount.toLocaleString('en-IN')} Pending Pickup Collection`,
+        advancePaid: 0,
+        balanceDue: totalAmount
+      });
+
+      setIsSuccess(true);
+
+      try {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -142,19 +316,19 @@ export default function BookingModal() {
   };
 
   const getWhatsAppUrl = () => {
-    const text = `*NEW BOOKING REQUEST - ${createdBookingId || 'WATCH MY TRIP ADVENTURE'}*\n` +
+    const text = `*NEW BOOKING CONFIRMED - ${createdBookingId || 'WATCH MY TRIP ADVENTURE'}*\n` +
       `--------------------------------\n` +
       `*Package:* ${currentTour?.title}\n` +
       `*Date of Travel:* ${date}\n` +
       `*Guests:* ${guestCount} Person(s)\n` +
+      `*Total Amount:* ₹${totalAmount}\n` +
+      `*Payment Mode:* ${paymentDetails.mode}\n` +
       `*Name:* ${customerName}\n` +
       `*Phone:* ${customerPhone}\n` +
       `*Pickup Location:* ${pickupLocation}\n` +
-      `*Special Notes:* ${specialRequirements || 'None'}\n` +
-      `*Total Estimate:* ₹${(currentTour?.price || 0) * guestCount}\n` +
+      (specialRequirements ? `*Special Request:* ${specialRequirements}\n` : '') +
       `--------------------------------\n` +
-      `Please confirm my slot and send driver pickup details!`;
-
+      `Please confirm my pickup driver details.`;
     return `https://wa.me/919588667027?text=${encodeURIComponent(text)}`;
   };
 
@@ -166,7 +340,11 @@ export default function BookingModal() {
           <div className="flex items-center space-x-2 overflow-hidden pr-2">
             <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
             <h3 className="text-base sm:text-lg font-bold text-white font-serif line-clamp-1">
-              {isSuccess ? 'Booking Request Submitted!' : (currentTour?.title || 'Book Package')}
+              {isSuccess
+                ? 'Booking Request Submitted!'
+                : activeBookingTour
+                ? activeBookingTour.title
+                : 'Book Your Goa Adventure — Choose Any Package'}
             </h3>
           </div>
           <button
@@ -229,13 +407,18 @@ export default function BookingModal() {
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
               {/* Tour Selection */}
               <div>
-                <label className="block text-zinc-300 font-bold mb-1">
-                  Selected Package *
+                <label className="block text-zinc-300 font-bold mb-1 flex items-center justify-between">
+                  <span>{activeBookingTour ? 'Selected Package' : 'Choose Package / Tour'} *</span>
+                  {!activeBookingTour && (
+                    <span className="text-[10px] text-amber-400 font-extrabold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                      CHOOSE FROM ALL 12+ PACKAGES
+                    </span>
+                  )}
                 </label>
                 <select
                   value={selectedTourId}
                   onChange={(e) => setSelectedTourId(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-white font-medium focus:border-amber-500 focus:outline-none"
+                  className="w-full bg-zinc-950 border border-amber-500/30 rounded-xl px-3 py-2.5 text-white font-semibold focus:border-amber-500 focus:outline-none"
                 >
                   {allAvailableTours.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -342,20 +525,117 @@ export default function BookingModal() {
                 />
               </div>
 
+              {/* PAYMENT MODE SELECTION */}
+              <div className="pt-2 border-t border-zinc-800 space-y-2">
+                <label className="block text-zinc-300 font-bold text-xs flex items-center justify-between">
+                  <span>Choose Payment Method *</span>
+                  <span className="text-[10px] text-amber-400 font-extrabold">
+                    {paymentModeChoice === 'advance_30' ? `30% Token: ₹${advanceAmount30.toLocaleString('en-IN')}` : `Total: ₹${totalAmount.toLocaleString('en-IN')}`}
+                  </span>
+                </label>
+
+                <div className="grid grid-cols-1 gap-2">
+                  {/* OPTION 1: 30% ADVANCE TOKEN (RECOMMENDED) */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentModeChoice('advance_30')}
+                    className={`p-3 rounded-2xl border text-left flex items-center justify-between transition cursor-pointer ${
+                      paymentModeChoice === 'advance_30'
+                        ? 'bg-amber-500/15 border-amber-500 text-amber-300 ring-1 ring-amber-500/50'
+                        : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:bg-zinc-900'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-black text-xs text-white">💳 Pay 30% Advance Token Online</span>
+                        <span className="text-[9px] font-black px-2 py-0.5 rounded bg-amber-500 text-zinc-950 uppercase">
+                          RECOMMENDED
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                        Pay <strong className="text-amber-400">₹{advanceAmount30.toLocaleString('en-IN')}</strong> now via Razorpay • Pay <strong className="text-zinc-200">₹{balanceDue30.toLocaleString('en-IN')}</strong> cash on pickup
+                      </p>
+                    </div>
+                    <div className="text-right pl-2">
+                      <span className="text-sm font-black text-amber-400">₹{advanceAmount30.toLocaleString('en-IN')}</span>
+                      <span className="text-[9px] text-zinc-500 block font-mono">NOW</span>
+                    </div>
+                  </button>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* OPTION 2: FULL PREPAID */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentModeChoice('prepaid')}
+                      className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition cursor-pointer ${
+                        paymentModeChoice === 'prepaid'
+                          ? 'bg-amber-500/15 border-amber-500 text-amber-300'
+                          : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:bg-zinc-900'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-[11px] text-white">💳 100% Full Payment</span>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
+                          PREPAID
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-zinc-400 mt-1">
+                        Pay ₹{totalAmount.toLocaleString('en-IN')} full amount now
+                      </span>
+                    </button>
+
+                    {/* OPTION 3: COD CASH ON PICKUP */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentModeChoice('cod')}
+                      className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition cursor-pointer ${
+                        paymentModeChoice === 'cod'
+                          ? 'bg-amber-500/15 border-amber-500 text-amber-300'
+                          : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:bg-zinc-900'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-[11px] text-white">💵 Cash on Pickup</span>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
+                          COD
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-zinc-400 mt-1">
+                        Pay ₹{totalAmount.toLocaleString('en-IN')} cash at pickup
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               {/* Total Calculation & Submit */}
               <div className="pt-2 border-t border-zinc-800 flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">Estimated Total</span>
-                  <span className="text-xl font-extrabold text-amber-400">
-                    ₹{(currentTour?.price || 0) * guestCount}
+                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">
+                    {paymentModeChoice === 'advance_30' ? 'Payable Now (30%)' : 'Total Booking Amount'}
                   </span>
+                  <span className="text-xl font-extrabold text-amber-400">
+                    ₹{paymentModeChoice === 'advance_30' ? advanceAmount30.toLocaleString('en-IN') : totalAmount.toLocaleString('en-IN')}
+                  </span>
+                  {paymentModeChoice === 'advance_30' && (
+                    <span className="text-[10px] text-zinc-400 block">
+                      Balance Due on Pickup: ₹{balanceDue30.toLocaleString('en-IN')}
+                    </span>
+                  )}
                 </div>
 
                 <button
                   type="submit"
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/25 transition transform hover:scale-105"
+                  disabled={isProcessingPayment}
+                  className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/25 transition transform hover:scale-105 disabled:opacity-50 cursor-pointer"
                 >
-                  CONFIRM & BOOK SLOT
+                  {isProcessingPayment
+                    ? 'CONNECTING RAZORPAY...'
+                    : paymentModeChoice === 'advance_30'
+                    ? `💳 PAY ₹${advanceAmount30.toLocaleString('en-IN')} (30% ADVANCE)`
+                    : paymentModeChoice === 'prepaid'
+                    ? `💳 PAY ₹${totalAmount.toLocaleString('en-IN')} FULL AMOUNT`
+                    : '✓ CONFIRM COD BOOKING'}
                 </button>
               </div>
             </form>
