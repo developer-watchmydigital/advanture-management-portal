@@ -9,7 +9,16 @@ const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET || 'RaaGCvtqYEqEsXONgO
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingId } = body;
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      bookingId,
+      paymentMode,
+      paymentStatus,
+      advancePaid,
+      balanceDue
+    } = body;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return NextResponse.json(
@@ -30,15 +39,22 @@ export async function POST(request: Request) {
       // Update Drizzle DB if bookingId provided and DATABASE_URL set
       if (bookingId && process.env.DATABASE_URL) {
         try {
+          const updatePayload: Record<string, any> = {
+            status: 'booked',
+            razorpayOrderId: razorpay_order_id,
+            razorpayPaymentId: razorpay_payment_id,
+            razorpaySignature: razorpay_signature,
+            updatedAt: new Date(),
+          };
+
+          if (paymentMode) updatePayload.paymentMode = paymentMode;
+          if (paymentStatus) updatePayload.paymentStatus = paymentStatus;
+          if (advancePaid !== undefined) updatePayload.advancePaid = Number(advancePaid);
+          if (balanceDue !== undefined) updatePayload.balanceDue = Number(balanceDue);
+
           await db
             .update(bookings)
-            .set({
-              status: 'booked',
-              razorpayOrderId: razorpay_order_id,
-              razorpayPaymentId: razorpay_payment_id,
-              razorpaySignature: razorpay_signature,
-              updatedAt: new Date(),
-            })
+            .set(updatePayload)
             .where(eq(bookings.id, bookingId));
         } catch (dbErr) {
           console.error('Error updating booking in DB after Razorpay verification:', dbErr);

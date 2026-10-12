@@ -82,7 +82,9 @@ export interface Booking {
   balanceDue?: number;
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
+  razorpaySignature?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface HeroSlide {

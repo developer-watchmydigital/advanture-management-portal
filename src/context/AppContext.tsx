@@ -281,12 +281,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (b.id === id) {
         const isAdvance = details.paymentMode === 'advance_30';
         const isPrepaid = details.paymentMode === 'prepaid';
+        const isCod = details.paymentMode === 'cod';
         const calculatedAdvance = details.advancePaid ?? (isAdvance ? Math.round(details.amount * 0.3) : isPrepaid ? details.amount : 0);
         const calculatedBalance = details.balanceDue ?? (details.amount - calculatedAdvance);
 
+        // Status rule:
+        // Any online payment (prepaid or 30% advance) defaults to 'booked' (Confirmed)
+        // COD payments default to 'pending' unless explicitly overridden
+        const resolvedStatus = details.status || (isCod ? 'pending' : 'booked');
+
         const updatedBooking = {
           ...b,
-          status: details.status || ('booked' as const),
+          status: resolvedStatus,
           amount: details.amount,
           paymentMode: details.paymentMode,
           paymentStatus: isPrepaid

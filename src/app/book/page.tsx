@@ -80,6 +80,8 @@ export default function BookPage() {
       return;
     }
 
+    const totalAmount = (currentTour?.price || 0) * guestCount;
+
     const booking = addBooking({
       tourId: currentTour.id,
       tourTitle: currentTour.title,
@@ -88,7 +90,13 @@ export default function BookPage() {
       customerName,
       customerPhone,
       pickupLocation,
-      specialRequirements
+      specialRequirements,
+      amount: totalAmount,
+      advancePaid: 0,
+      balanceDue: totalAmount,
+      paymentMode: 'cod',
+      paymentStatus: 'pending',
+      status: 'pending'
     });
 
     setBookingRef(booking.id);
@@ -102,18 +110,23 @@ export default function BookPage() {
   };
 
   const getWhatsAppUrl = () => {
-    const text = `*NEW TOUR BOOKING - ${bookingRef}*\n` +
+    const total = (currentTour?.price || 0) * guestCount;
+    const text =
+      `*BOOKING REQUEST — CASH ON PICKUP (PENDING)*\n` +
       `--------------------------------\n` +
+      `*Booking ID:* ${bookingRef || 'Pending'}\n` +
       `*Package:* ${currentTour?.title}\n` +
-      `*Date:* ${date}\n` +
-      `*Travelers:* ${guestCount} Guests\n` +
-      `*Name:* ${customerName}\n` +
-      `*Phone:* ${customerPhone}\n` +
+      `*Date of Travel:* ${date}\n` +
+      `*Guests:* ${guestCount} Person(s)\n` +
+      `*Total Package Amount:* ₹${total.toLocaleString('en-IN')}\n` +
+      `*Payment Status:* 💵 Cash on Pickup (Pending Verification)\n` +
+      `*Amount Due on Pickup:* ₹${total.toLocaleString('en-IN')}\n` +
+      `*Customer Name:* ${customerName}\n` +
+      `*Customer Phone:* ${customerPhone}\n` +
       `*Pickup Location:* ${pickupLocation}\n` +
-      `*Special Notes:* ${specialRequirements || 'None'}\n` +
-      `*Total Price:* ₹${(currentTour?.price || 0) * guestCount}\n` +
+      (specialRequirements ? `*Special Request:* ${specialRequirements}\n` : '') +
       `--------------------------------\n` +
-      `Please confirm my spot & send pickup driver info!`;
+      `Please verify my booking and send pickup driver confirmation.`;
 
     return `https://wa.me/919588667027?text=${encodeURIComponent(text)}`;
   };
@@ -148,14 +161,20 @@ export default function BookPage() {
 
           {isSuccess ? (
             <div className="text-center py-8 space-y-4">
-              <div className="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/40 animate-bounce">
+              <div className="w-20 h-20 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto border border-amber-500/40">
                 <CheckCircle2 className="w-12 h-12" />
               </div>
               
-              <h2 className="text-3xl font-black text-white">Booking Ref: {bookingRef}</h2>
+              <div className="space-y-1">
+                <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  ⏳ Booking Request Submitted — Cash on Pickup (Pending)
+                </span>
+                <h2 className="text-3xl font-black text-white font-mono">Ref: {bookingRef}</h2>
+              </div>
+
               <p className="text-sm text-zinc-300 max-w-md mx-auto">
-                Congratulations <span className="text-amber-400 font-bold">{customerName}</span>! Your slot for{' '}
-                <span className="text-white font-semibold">{currentTour?.title}</span> on {date} has been confirmed.
+                Thank you <span className="text-amber-400 font-bold">{customerName}</span>! Your slot for{' '}
+                <span className="text-white font-semibold">{currentTour?.title}</span> on {date} has been recorded with Cash on Pickup. Status will remain pending until pickup verification.
               </p>
 
               <div className="p-6 bg-zinc-950 rounded-2xl border border-zinc-800 text-left space-y-3 text-xs max-w-md mx-auto">
@@ -171,9 +190,13 @@ export default function BookPage() {
                   <span>Pickup Location:</span>
                   <span className="text-white font-bold">{pickupLocation}</span>
                 </div>
-                <div className="flex justify-between text-amber-400 font-bold text-base pt-3 border-t border-zinc-800">
+                <div className="flex justify-between text-zinc-300 font-bold text-sm pt-3 border-t border-zinc-800">
                   <span>Total Amount:</span>
-                  <span>₹{(currentTour?.price || 0) * guestCount}</span>
+                  <span className="text-amber-400 font-mono">₹{((currentTour?.price || 0) * guestCount).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-amber-400 font-bold">
+                  <span>Pay Cash on Pickup:</span>
+                  <span className="font-mono">₹{((currentTour?.price || 0) * guestCount).toLocaleString('en-IN')} (Pending)</span>
                 </div>
               </div>
 
@@ -185,7 +208,7 @@ export default function BookPage() {
                   className="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm shadow-xl shadow-emerald-600/30 transition flex items-center justify-center space-x-2"
                 >
                   <MessageCircle className="w-5 h-5 fill-white/20" />
-                  <span>CONFIRM & GET DRIVER DETAILS ON WHATSAPP</span>
+                  <span>SHARE & CONFIRM ON WHATSAPP</span>
                 </a>
 
                 <Link

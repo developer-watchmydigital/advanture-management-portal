@@ -286,15 +286,23 @@ export default function AdminPage() {
     setBookingModalLead(lead);
     setModalAmount(lead.amount || 1499);
     setModalPaymentMode(lead.paymentMode || 'cod');
-    setModalStatus(lead.status || 'booked');
+    setModalStatus(lead.status || (lead.paymentMode === 'cod' ? 'pending' : 'booked'));
   };
 
   const handleSaveBookingModal = () => {
     if (!bookingModalLead) return;
+    const is30 = modalPaymentMode === 'advance_30';
+    const isPrepaid = modalPaymentMode === 'prepaid';
+    const amt = Number(modalAmount);
+    const adv = is30 ? Math.round(amt * 0.3) : isPrepaid ? amt : 0;
+    const due = is30 ? amt - adv : isPrepaid ? 0 : amt;
+
     confirmBookingWithDetails(bookingModalLead.id, {
-      amount: Number(modalAmount),
+      amount: amt,
       paymentMode: modalPaymentMode,
-      status: modalStatus
+      status: modalStatus,
+      advancePaid: adv,
+      balanceDue: due
     });
     setBookingModalLead(null);
   };
@@ -1062,14 +1070,27 @@ export default function AdminPage() {
                                     ? '100% PREPAID'
                                     : b.paymentMode === 'advance_30'
                                     ? '⚡ 30% ADVANCE PAID'
-                                    : 'COD CASH'}
+                                    : '💵 COD CASH'}
                                 </span>
+                                {b.razorpayPaymentId && (
+                                  <span className="text-[9px] text-zinc-500 font-mono block mt-0.5 truncate max-w-[120px]" title={b.razorpayPaymentId}>
+                                    RP: {b.razorpayPaymentId}
+                                  </span>
+                                )}
                               </td>
                               <td className="py-3 px-3 space-y-0.5">
                                 <span className="font-mono font-bold text-white block">₹{b.amount || 0}</span>
-                                {b.paymentMode === 'advance_30' && (
+                                {b.paymentMode === 'advance_30' ? (
                                   <span className="text-[10px] font-bold text-amber-400 block font-mono">
                                     Paid: ₹{(b.advancePaid ?? Math.round((b.amount || 0) * 0.3)).toLocaleString('en-IN')} | Due: ₹{(b.balanceDue ?? Math.round((b.amount || 0) * 0.7)).toLocaleString('en-IN')}
+                                  </span>
+                                ) : b.paymentMode === 'prepaid' ? (
+                                  <span className="text-[10px] font-bold text-emerald-400 block font-mono">
+                                    Paid: ₹{(b.amount || 0).toLocaleString('en-IN')} (Full ✓)
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-bold text-zinc-400 block font-mono">
+                                    Due on Pickup: ₹{(b.amount || 0).toLocaleString('en-IN')}
                                   </span>
                                 )}
                               </td>
@@ -1087,7 +1108,17 @@ export default function AdminPage() {
                                       : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                                   }`}
                                 >
-                                  {b.status}
+                                  {b.status === 'booked'
+                                    ? b.paymentMode === 'advance_30'
+                                      ? 'CONFIRMED (30% PAID)'
+                                      : b.paymentMode === 'prepaid'
+                                      ? 'CONFIRMED (FULL PAID)'
+                                      : 'CONFIRMED'
+                                    : b.status === 'pending'
+                                    ? b.paymentMode === 'cod'
+                                      ? 'PENDING (COD)'
+                                      : 'PENDING'
+                                    : b.status}
                                 </span>
                               </td>
                               <td className="py-3 px-3 text-right">

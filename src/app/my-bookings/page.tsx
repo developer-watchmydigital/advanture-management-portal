@@ -9,7 +9,7 @@ import Footer from '@/components/Footer';
 import {
   CalendarCheck, Clock, MapPin, Users, Package, ArrowLeft,
   User, Mail, Phone, LogIn, CheckCircle2, XCircle, AlertCircle,
-  PhoneCall, Star, Sparkles, RefreshCw, RotateCcw
+  PhoneCall, Star, Sparkles, RefreshCw, RotateCcw, MessageCircle
 } from 'lucide-react';
 
 export default function MyBookingsPage() {
@@ -47,13 +47,29 @@ export default function MyBookingsPage() {
       .sort((a, b) => b.date.localeCompare(a.date));
   }, [userBookings, today]);
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, paymentMode?: string) => {
     switch (status) {
       case 'booked':
+        if (paymentMode === 'advance_30') {
+          return (
+            <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 text-[10px] font-bold uppercase border border-emerald-500/20">
+              <CheckCircle2 className="w-3 h-3" />
+              <span>Confirmed (30% Paid)</span>
+            </span>
+          );
+        }
+        if (paymentMode === 'prepaid') {
+          return (
+            <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 text-[10px] font-bold uppercase border border-emerald-500/20">
+              <CheckCircle2 className="w-3 h-3" />
+              <span>Confirmed (Full Paid)</span>
+            </span>
+          );
+        }
         return (
           <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 text-[10px] font-bold uppercase border border-emerald-500/20">
             <CheckCircle2 className="w-3 h-3" />
-            <span>Confirmed</span>
+            <span>Booking Confirmed</span>
           </span>
         );
       case 'contacted':
@@ -81,10 +97,59 @@ export default function MyBookingsPage() {
         return (
           <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-400 text-[10px] font-bold uppercase border border-amber-500/20">
             <AlertCircle className="w-3 h-3" />
-            <span>Pending</span>
+            <span>{paymentMode === 'cod' ? 'Pending (COD Pickup)' : 'Pending Verification'}</span>
           </span>
         );
     }
+  };
+
+  const getWhatsAppShareUrl = (b: (typeof bookings)[0]) => {
+    const is30 = b.paymentMode === 'advance_30';
+    const isPrepaid = b.paymentMode === 'prepaid';
+    const isCod = b.paymentMode === 'cod' || !b.paymentMode;
+
+    let headerStatus = '';
+    let paymentStatusLine = '';
+    let balanceLine = '';
+
+    const total = b.amount || 0;
+    if (is30) {
+      const paid = b.advancePaid ?? Math.round(total * 0.3);
+      const due = b.balanceDue ?? (total - paid);
+      headerStatus = `*BOOKING CONFIRMED — 30% ADVANCE PAID ONLINE*`;
+      paymentStatusLine = `*Payment Status:* ⚡ 30% Advance Paid Online (₹${paid.toLocaleString('en-IN')})\n`;
+      balanceLine = `*Balance Due on Pickup:* ₹${due.toLocaleString('en-IN')}\n`;
+    } else if (isPrepaid) {
+      headerStatus = `*BOOKING CONFIRMED — 100% FULL PAYMENT PAID ONLINE*`;
+      paymentStatusLine = `*Payment Status:* 💳 100% Full Payment Paid Online (₹${total.toLocaleString('en-IN')})\n`;
+      balanceLine = `*Balance Due:* ₹0 (Fully Paid)\n`;
+    } else {
+      headerStatus = `*BOOKING REQUEST — CASH ON PICKUP (PENDING)*`;
+      paymentStatusLine = `*Payment Status:* 💵 Cash on Pickup (Pending Verification)\n`;
+      balanceLine = `*Amount Due on Pickup:* ₹${total.toLocaleString('en-IN')}\n`;
+    }
+
+    const text =
+      `${headerStatus}\n` +
+      `--------------------------------\n` +
+      `*Booking ID:* ${b.id}\n` +
+      `*Package:* ${b.tourTitle}\n` +
+      `*Date of Travel:* ${b.date}\n` +
+      `*Guests:* ${b.guestCount} Person(s)\n` +
+      `*Total Package Amount:* ₹${total.toLocaleString('en-IN')}\n` +
+      paymentStatusLine +
+      balanceLine +
+      (b.razorpayPaymentId ? `*Razorpay Payment ID:* ${b.razorpayPaymentId}\n` : '') +
+      `*Customer Name:* ${b.customerName}\n` +
+      `*Customer Phone:* ${b.customerPhone}\n` +
+      `*Pickup Location:* ${b.pickupLocation || 'Goa'}\n` +
+      (b.specialRequirements ? `*Special Request:* ${b.specialRequirements}\n` : '') +
+      `--------------------------------\n` +
+      (isCod
+        ? `Please verify my booking and send pickup driver confirmation.`
+        : `My payment is confirmed. Please send driver contact & vehicle number.`);
+
+    return `https://wa.me/919588667027?text=${encodeURIComponent(text)}`;
   };
 
 
@@ -239,7 +304,7 @@ export default function MyBookingsPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-3 mb-2">
-                          {getStatusBadge(booking.status)}
+                          {getStatusBadge(booking.status, booking.paymentMode)}
                           <span className="text-[10px] text-zinc-600 font-mono">{booking.id}</span>
                         </div>
                         <h3 className="text-sm sm:text-base font-bold text-white truncate group-hover:text-amber-400 transition">
@@ -261,9 +326,39 @@ export default function MyBookingsPage() {
                         </div>
                       </div>
                       {booking.amount && (
-                        <div className="text-right shrink-0">
-                          <p className="text-lg font-black text-amber-400">₹{booking.amount.toLocaleString()}</p>
-                          <p className="text-[10px] text-zinc-600 uppercase">{booking.paymentMode === 'prepaid' ? 'Paid' : 'COD'}</p>
+                        <div className="text-right shrink-0 space-y-1">
+                          <p className="text-lg font-black text-amber-400 font-mono">
+                            ₹{booking.amount.toLocaleString('en-IN')}
+                          </p>
+                          {booking.paymentMode === 'advance_30' ? (
+                            <div className="text-[10px] space-y-0.5">
+                              <span className="text-emerald-400 font-bold block">
+                                ⚡ 30% Paid (₹{(booking.advancePaid ?? Math.round(booking.amount * 0.3)).toLocaleString('en-IN')})
+                              </span>
+                              <span className="text-amber-300 font-medium block">
+                                Due ₹{(booking.balanceDue ?? Math.round(booking.amount * 0.7)).toLocaleString('en-IN')} on Pickup
+                              </span>
+                            </div>
+                          ) : booking.paymentMode === 'prepaid' ? (
+                            <span className="text-[10px] text-emerald-400 font-bold uppercase block">
+                              ✓ 100% Full Payment Paid
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-amber-400 font-bold uppercase block">
+                              💵 Cash on Pickup (Pending)
+                            </span>
+                          )}
+                          <div className="pt-1">
+                            <a
+                              href={getWhatsAppShareUrl(booking)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-[10px] font-bold border border-emerald-500/30 transition"
+                            >
+                              <MessageCircle className="w-3 h-3" />
+                              <span>WhatsApp</span>
+                            </a>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -287,7 +382,7 @@ export default function MyBookingsPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-3 mb-2">
-                          {getStatusBadge(booking.status)}
+                          {getStatusBadge(booking.status, booking.paymentMode)}
                           <span className="text-[10px] text-zinc-500 font-mono">{booking.id}</span>
                         </div>
                         <h3 className="text-sm sm:text-base font-bold text-zinc-300 truncate">
@@ -349,7 +444,7 @@ export default function MyBookingsPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-3 mb-2">
-                          {getStatusBadge(booking.status)}
+                          {getStatusBadge(booking.status, booking.paymentMode)}
                           <span className="text-[10px] text-zinc-700 font-mono">{booking.id}</span>
                         </div>
                         <h3 className="text-sm font-bold text-zinc-300 truncate">

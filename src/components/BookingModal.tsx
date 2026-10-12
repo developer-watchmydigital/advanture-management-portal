@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
-import { X, Calendar, Users, MapPin, Phone, User, FileText, CheckCircle2, MessageCircle, Sparkles, LogIn } from 'lucide-react';
+import { X, Calendar, Users, MapPin, Phone, User, FileText, CheckCircle2, MessageCircle, Sparkles, LogIn, Clock } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 declare global {
@@ -161,7 +161,11 @@ export default function BookingModal() {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              bookingId: booking.id
+              bookingId: booking.id,
+              paymentMode: isPartialAdvance ? 'advance_30' : 'prepaid',
+              paymentStatus: isPartialAdvance ? 'partial_paid' : 'collected',
+              advancePaid: isPartialAdvance ? advanceAmount30 : totalAmount,
+              balanceDue: isPartialAdvance ? balanceDue30 : 0
             })
           });
 
@@ -183,10 +187,10 @@ export default function BookingModal() {
             });
 
             setPaymentDetails({
-              mode: isPartialAdvance ? '30% Advance Paid Online (Razorpay)' : '100% Full Prepaid (Razorpay)',
+              mode: modeKey,
               status: isPartialAdvance
-                ? `Advance ₹${paid.toLocaleString('en-IN')} Collected (Balance ₹${due.toLocaleString('en-IN')} Due on Pickup)`
-                : '100% Fully Paid ✓',
+                ? `30% Advance Paid Online (₹${paid.toLocaleString('en-IN')})`
+                : `100% Full Payment Paid Online (₹${paid.toLocaleString('en-IN')})`,
               id: response.razorpay_payment_id,
               advancePaid: paid,
               balanceDue: due
@@ -270,7 +274,8 @@ export default function BookingModal() {
       advancePaid: paidVal,
       balanceDue: dueVal,
       paymentMode: paymentModeChoice,
-      paymentStatus: isPrep ? 'collected' : is30Adv ? 'partial_paid' : 'pending'
+      paymentStatus: isPrep ? 'collected' : is30Adv ? 'partial_paid' : 'pending',
+      status: paymentModeChoice === 'cod' ? 'pending' : 'pending'
     });
 
     setCreatedBookingId(booking.id);
@@ -280,16 +285,17 @@ export default function BookingModal() {
     } else if (paymentModeChoice === 'prepaid') {
       handleOnlineRazorpayPayment(booking, false);
     } else {
+      // COD Booking: status stays 'pending' until verified by admin/pickup
       confirmBookingWithDetails(booking.id, {
         amount: totalAmount,
         paymentMode: 'cod',
-        status: 'booked',
+        status: 'pending',
         advancePaid: 0,
         balanceDue: totalAmount
       });
 
       setPaymentDetails({
-        mode: '100% Cash on Pickup (COD)',
+        mode: 'cod',
         status: `₹${totalAmount.toLocaleString('en-IN')} Pending Pickup Collection`,
         advancePaid: 0,
         balanceDue: totalAmount
@@ -316,19 +322,50 @@ export default function BookingModal() {
   };
 
   const getWhatsAppUrl = () => {
-    const text = `*NEW BOOKING CONFIRMED - ${createdBookingId || 'WATCH MY TRIP ADVENTURE'}*\n` +
+    const is30 = paymentModeChoice === 'advance_30' || paymentDetails.mode === 'advance_30';
+    const isPrepaid = paymentModeChoice === 'prepaid' || paymentDetails.mode === 'prepaid';
+    const isCod = paymentModeChoice === 'cod' || paymentDetails.mode === 'cod';
+
+    let headerStatus = '';
+    let paymentStatusLine = '';
+    let balanceLine = '';
+
+    if (is30) {
+      const paid = paymentDetails.advancePaid ?? advanceAmount30;
+      const due = paymentDetails.balanceDue ?? balanceDue30;
+      headerStatus = `*BOOKING CONFIRMED — 30% ADVANCE PAID ONLINE*`;
+      paymentStatusLine = `*Payment Status:* ⚡ 30% Advance Paid Online (₹${paid.toLocaleString('en-IN')})\n`;
+      balanceLine = `*Balance Due on Pickup:* ₹${due.toLocaleString('en-IN')}\n`;
+    } else if (isPrepaid) {
+      headerStatus = `*BOOKING CONFIRMED — 100% FULL PAYMENT PAID ONLINE*`;
+      paymentStatusLine = `*Payment Status:* 💳 100% Full Payment Paid Online (₹${totalAmount.toLocaleString('en-IN')})\n`;
+      balanceLine = `*Balance Due:* ₹0 (Fully Paid)\n`;
+    } else {
+      headerStatus = `*BOOKING REQUEST — CASH ON PICKUP (PENDING)*`;
+      paymentStatusLine = `*Payment Status:* 💵 Cash on Pickup (Pending Verification)\n`;
+      balanceLine = `*Amount Due on Pickup:* ₹${totalAmount.toLocaleString('en-IN')}\n`;
+    }
+
+    const text =
+      `${headerStatus}\n` +
       `--------------------------------\n` +
+      `*Booking ID:* ${createdBookingId || 'Pending'}\n` +
       `*Package:* ${currentTour?.title}\n` +
       `*Date of Travel:* ${date}\n` +
       `*Guests:* ${guestCount} Person(s)\n` +
-      `*Total Amount:* ₹${totalAmount}\n` +
-      `*Payment Mode:* ${paymentDetails.mode}\n` +
-      `*Name:* ${customerName}\n` +
-      `*Phone:* ${customerPhone}\n` +
+      `*Total Package Amount:* ₹${totalAmount.toLocaleString('en-IN')}\n` +
+      paymentStatusLine +
+      balanceLine +
+      (paymentDetails.id ? `*Razorpay Payment ID:* ${paymentDetails.id}\n` : '') +
+      `*Customer Name:* ${customerName}\n` +
+      `*Customer Phone:* ${customerPhone}\n` +
       `*Pickup Location:* ${pickupLocation}\n` +
       (specialRequirements ? `*Special Request:* ${specialRequirements}\n` : '') +
       `--------------------------------\n` +
-      `Please confirm my pickup driver details.`;
+      (isCod
+        ? `Please verify my booking and send pickup driver confirmation.`
+        : `My payment is confirmed. Please send driver contact & vehicle number.`);
+
     return `https://wa.me/919588667027?text=${encodeURIComponent(text)}`;
   };
 
@@ -341,7 +378,7 @@ export default function BookingModal() {
             <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
             <h3 className="text-base sm:text-lg font-bold text-white font-serif line-clamp-1">
               {isSuccess
-                ? 'Booking Request Submitted!'
+                ? (paymentModeChoice === 'cod' ? 'Booking Submitted (Pending Verification)' : 'Booking Confirmed!')
                 : activeBookingTour
                 ? activeBookingTour.title
                 : 'Book Your Goa Adventure — Choose Any Package'}
@@ -359,47 +396,117 @@ export default function BookingModal() {
         <div className="p-6 overflow-y-auto space-y-4">
           {isSuccess ? (
             <div className="text-center py-6 space-y-4">
-              <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/40 animate-bounce">
-                <CheckCircle2 className="w-10 h-10" />
+              <div
+                className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto border ${
+                  paymentModeChoice === 'cod'
+                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                    : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 animate-bounce'
+                }`}
+              >
+                {paymentModeChoice === 'cod' ? (
+                  <Clock className="w-10 h-10" />
+                ) : (
+                  <CheckCircle2 className="w-10 h-10" />
+                )}
               </div>
               
-              <h4 className="text-2xl font-black text-white">Booking Ref: {createdBookingId}</h4>
-              <p className="text-sm text-zinc-300 max-w-sm mx-auto leading-relaxed">
-                Thank you, <span className="text-amber-400 font-bold">{customerName}</span>! Your slot for{' '}
-                <span className="text-white font-semibold">{currentTour?.title}</span> on {date} has been recorded in our system.
+              <div className="space-y-1">
+                <span
+                  className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+                    paymentModeChoice === 'cod'
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                      : paymentModeChoice === 'advance_30'
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                  }`}
+                >
+                  {paymentModeChoice === 'cod'
+                    ? '⏳ Booking Pending — Cash on Pickup'
+                    : paymentModeChoice === 'advance_30'
+                    ? '⚡ Booking Confirmed — 30% Advance Paid'
+                    : '✓ Booking Confirmed — 100% Fully Paid'}
+                </span>
+                <h4 className="text-2xl font-black text-white font-mono">Ref: {createdBookingId}</h4>
+              </div>
+
+              <p className="text-xs sm:text-sm text-zinc-300 max-w-sm mx-auto leading-relaxed">
+                Thank you, <span className="text-amber-400 font-bold">{customerName}</span>!{' '}
+                {paymentModeChoice === 'advance_30'
+                  ? `Your 30% advance payment has been confirmed. Balance ₹${(paymentDetails.balanceDue ?? balanceDue30).toLocaleString('en-IN')} is payable to driver on pickup.`
+                  : paymentModeChoice === 'prepaid'
+                  ? `Your full payment has been confirmed. Your spot is 100% secured!`
+                  : `Your booking request has been submitted with Cash on Pickup. Status will remain pending until pickup verification.`}
               </p>
 
               <div className="p-4 bg-zinc-950 rounded-2xl border border-zinc-800 text-left space-y-2 text-xs">
                 <div className="flex justify-between text-zinc-400">
-                  <span>Travelers:</span>
-                  <span className="text-white font-bold">{guestCount} Guest(s)</span>
+                  <span>Package:</span>
+                  <span className="text-white font-bold text-right truncate max-w-[200px]">{currentTour?.title}</span>
+                </div>
+                <div className="flex justify-between text-zinc-400">
+                  <span>Date & Travelers:</span>
+                  <span className="text-white font-bold">{date} ({guestCount} Guests)</span>
                 </div>
                 <div className="flex justify-between text-zinc-400">
                   <span>Pickup Location:</span>
                   <span className="text-white font-bold">{pickupLocation}</span>
                 </div>
-                <div className="flex justify-between text-amber-400 font-bold text-sm pt-2 border-t border-zinc-800">
+                <div className="flex justify-between text-zinc-300 font-bold pt-2 border-t border-zinc-800">
                   <span>Total Amount:</span>
-                  <span>₹{(currentTour?.price || 0) * guestCount}</span>
+                  <span className="text-amber-400 font-mono text-sm">₹{totalAmount.toLocaleString('en-IN')}</span>
                 </div>
+                {paymentModeChoice === 'advance_30' && (
+                  <>
+                    <div className="flex justify-between text-emerald-400 font-bold">
+                      <span>30% Advance Paid Online:</span>
+                      <span className="font-mono">₹{(paymentDetails.advancePaid ?? advanceAmount30).toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="flex justify-between text-amber-300 font-bold">
+                      <span>Balance Due on Pickup:</span>
+                      <span className="font-mono">₹{(paymentDetails.balanceDue ?? balanceDue30).toLocaleString('en-IN')}</span>
+                    </div>
+                  </>
+                )}
+                {paymentModeChoice === 'prepaid' && (
+                  <div className="flex justify-between text-emerald-400 font-bold">
+                    <span>Full Payment Paid:</span>
+                    <span className="font-mono">₹{totalAmount.toLocaleString('en-IN')} (Settled ✓)</span>
+                  </div>
+                )}
+                {paymentModeChoice === 'cod' && (
+                  <div className="flex justify-between text-amber-400 font-bold">
+                    <span>Pay Cash on Pickup:</span>
+                    <span className="font-mono">₹{totalAmount.toLocaleString('en-IN')} (Pending)</span>
+                  </div>
+                )}
+                {paymentDetails.id && (
+                  <div className="flex justify-between text-zinc-500 text-[10px] pt-1 border-t border-zinc-800/60 font-mono">
+                    <span>Payment ID:</span>
+                    <span>{paymentDetails.id}</span>
+                  </div>
+                )}
               </div>
 
-              <div className="pt-4 space-y-3">
+              <div className="pt-3 space-y-2">
                 <a
                   href={getWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm shadow-lg shadow-emerald-600/30 transition flex items-center justify-center space-x-2"
+                  className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-emerald-600/30 transition flex items-center justify-center space-x-2"
                 >
                   <MessageCircle className="w-5 h-5 fill-white/20" />
-                  <span>CONFIRM ON WHATSAPP NOW</span>
+                  <span>
+                    {paymentModeChoice === 'cod'
+                      ? 'SHARE & VERIFY ON WHATSAPP'
+                      : 'SHARE CONFIRMATION ON WHATSAPP'}
+                  </span>
                 </a>
 
                 <button
                   onClick={handleClose}
-                  className="w-full py-3 rounded-xl bg-zinc-800 text-zinc-300 hover:text-white font-bold text-xs"
+                  className="w-full py-2.5 rounded-xl bg-zinc-800 text-zinc-300 hover:text-white font-bold text-xs"
                 >
-                  Close Window
+                  Done
                 </button>
               </div>
             </div>
