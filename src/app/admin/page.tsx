@@ -1028,92 +1028,90 @@ export default function AdminPage() {
                       No inquiries found for selected date filter. Incoming leads from booking forms will appear here!
                     </div>
                   ) : (
-                    <div className="overflow-x-auto pb-3">
-                      <table className="w-full min-w-[1120px] text-left text-xs border-collapse">
+                    <div className="w-full">
+                      <table className="w-full text-left border-collapse table-auto">
                         <thead>
-                          <tr className="border-b border-zinc-800 text-zinc-400 uppercase font-black tracking-wider text-[11px]">
-                            <th className="py-3.5 px-3 w-32 whitespace-nowrap">Lead ID</th>
-                            <th className="py-3.5 px-3 w-44 whitespace-nowrap">Customer</th>
-                            <th className="py-3.5 px-3 min-w-[220px]">Tour</th>
-                            <th className="py-3.5 px-3 w-36 whitespace-nowrap">Date / Guests</th>
-                            <th className="py-3.5 px-3 w-40 whitespace-nowrap">Mode</th>
-                            <th className="py-3.5 px-3 w-56 whitespace-nowrap">Amount</th>
-                            <th className="py-3.5 px-3 w-48 whitespace-nowrap">Status</th>
-                            <th className="py-3.5 px-3 w-36 text-right whitespace-nowrap">Actions</th>
+                          <tr className="border-b border-zinc-800 text-zinc-400 uppercase font-black tracking-wider text-[10px]">
+                            <th className="py-2.5 px-2 w-[10%] whitespace-nowrap">Lead ID</th>
+                            <th className="py-2.5 px-2 w-[14%] whitespace-nowrap">Customer</th>
+                            <th className="py-2.5 px-2 w-[22%]">Tour Package</th>
+                            <th className="py-2.5 px-2 w-[12%] whitespace-nowrap">Date / Guests</th>
+                            <th className="py-2.5 px-2 w-[11%] whitespace-nowrap">Mode</th>
+                            <th className="py-2.5 px-2 w-[14%] whitespace-nowrap">Amount</th>
+                            <th className="py-2.5 px-2 w-[10%] whitespace-nowrap">Status</th>
+                            <th className="py-2.5 px-2 w-[7%] text-right whitespace-nowrap">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-800/60">
                           {filteredBookings.map((b) => (
                             <tr key={b.id} className="hover:bg-zinc-950/60 transition">
-                              <td className="py-3.5 px-3 font-mono font-bold text-amber-400 whitespace-nowrap">
-                                <span className="bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-md inline-block whitespace-nowrap">
-                                  {b.id}
-                                </span>
+                              <td className="py-2.5 px-2 font-mono font-bold text-amber-400 whitespace-nowrap text-[11px]">
+                                {b.id}
                               </td>
-                              <td className="py-3.5 px-3 whitespace-nowrap">
-                                <span className="font-bold text-white block truncate max-w-[160px]">{b.customerName}</span>
-                                <span className="text-[11px] text-zinc-400 block font-mono">{b.customerPhone}</span>
+                              <td className="py-2.5 px-2">
+                                <span className="font-bold text-white text-xs block truncate max-w-[130px]">{b.customerName}</span>
+                                <span className="text-[10px] text-zinc-400 block font-mono">{b.customerPhone}</span>
                               </td>
-                              <td className="py-3.5 px-3">
-                                <span className="text-zinc-200 font-medium block max-w-[240px] leading-snug line-clamp-2" title={b.tourTitle}>
+                              <td className="py-2.5 px-2">
+                                <span className="text-zinc-200 font-medium text-[11px] leading-tight block break-words" title={b.tourTitle}>
                                   {b.tourTitle}
                                 </span>
                               </td>
-                              <td className="py-3.5 px-3 whitespace-nowrap text-zinc-400 font-medium">
-                                <span className="block text-zinc-300 font-mono text-[11px]">{b.date}</span>
-                                <span className="block text-[11px] text-zinc-500">
+                              <td className="py-2.5 px-2 whitespace-nowrap text-zinc-400">
+                                <span className="block text-zinc-300 font-mono text-[10px]">{b.date}</span>
+                                <span className="block text-[10px] text-zinc-500">
                                   {b.guestCount} {b.guestCount === 1 ? 'Guest' : 'Guests'}
                                 </span>
                               </td>
-                              <td className="py-3.5 px-3 whitespace-nowrap">
+                              <td className="py-2.5 px-2 whitespace-nowrap">
                                 <span
-                                  className={`inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider whitespace-nowrap border ${
+                                  className={`inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider whitespace-nowrap border ${
                                     b.paymentMode === 'prepaid'
                                       ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                                       : b.paymentMode === 'advance_30'
                                       ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                                      : 'bg-zinc-800 text-zinc-300 border-zinc-700'
+                                      : 'bg-zinc-800 text-zinc-300 border border-zinc-700'
                                   }`}
                                 >
                                   {b.paymentMode === 'prepaid'
                                     ? '100% PREPAID'
                                     : b.paymentMode === 'advance_30'
-                                    ? '⚡ 30% ADVANCE PAID'
-                                    : '💵 COD CASH'}
+                                    ? '⚡ 30% ADVANCE'
+                                    : '💵 COD'}
                                 </span>
                                 {b.razorpayPaymentId && (
-                                  <span className="text-[9px] text-zinc-500 font-mono block mt-1 truncate max-w-[130px] whitespace-nowrap" title={b.razorpayPaymentId}>
+                                  <span className="text-[8px] text-zinc-500 font-mono block mt-0.5 truncate max-w-[100px]" title={b.razorpayPaymentId}>
                                     RP: {b.razorpayPaymentId}
                                   </span>
                                 )}
                               </td>
-                              <td className="py-3.5 px-3 whitespace-nowrap">
-                                <span className="font-mono font-bold text-white text-sm block">
+                              <td className="py-2.5 px-2 whitespace-nowrap">
+                                <span className="font-mono font-bold text-white text-xs block">
                                   ₹{(b.amount || 0).toLocaleString('en-IN')}
                                 </span>
                                 {b.paymentMode === 'advance_30' ? (
-                                  <div className="flex items-center gap-1.5 text-[10px] font-mono mt-0.5 whitespace-nowrap">
-                                    <span className="text-emerald-400 font-bold whitespace-nowrap">
+                                  <div className="flex items-center gap-1 text-[9px] font-mono mt-0.5 whitespace-nowrap">
+                                    <span className="text-emerald-400 font-semibold">
                                       Paid: ₹{(b.advancePaid ?? Math.round((b.amount || 0) * 0.3)).toLocaleString('en-IN')}
                                     </span>
                                     <span className="text-zinc-600">|</span>
-                                    <span className="text-amber-400 font-bold whitespace-nowrap">
+                                    <span className="text-amber-400 font-semibold">
                                       Due: ₹{(b.balanceDue ?? Math.round((b.amount || 0) * 0.7)).toLocaleString('en-IN')}
                                     </span>
                                   </div>
                                 ) : b.paymentMode === 'prepaid' ? (
-                                  <span className="text-[10px] font-bold text-emerald-400 font-mono block mt-0.5 whitespace-nowrap">
+                                  <span className="text-[9px] font-bold text-emerald-400 font-mono block mt-0.5 whitespace-nowrap">
                                     Paid: ₹{(b.amount || 0).toLocaleString('en-IN')} (Full ✓)
                                   </span>
                                 ) : (
-                                  <span className="text-[10px] font-bold text-zinc-400 font-mono block mt-0.5 whitespace-nowrap">
-                                    Due on Pickup: ₹{(b.amount || 0).toLocaleString('en-IN')}
+                                  <span className="text-[9px] font-bold text-zinc-400 font-mono block mt-0.5 whitespace-nowrap">
+                                    Due: ₹{(b.amount || 0).toLocaleString('en-IN')}
                                   </span>
                                 )}
                               </td>
-                              <td className="py-3.5 px-3 whitespace-nowrap">
+                              <td className="py-2.5 px-2 whitespace-nowrap">
                                 <span
-                                  className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap border ${
+                                  className={`inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider whitespace-nowrap border ${
                                     b.status === 'booked'
                                       ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                                       : b.status === 'contacted'
@@ -1127,9 +1125,9 @@ export default function AdminPage() {
                                 >
                                   {b.status === 'booked'
                                     ? b.paymentMode === 'advance_30'
-                                      ? 'CONFIRMED (30% PAID)'
+                                      ? 'CONFIRMED (30%)'
                                       : b.paymentMode === 'prepaid'
-                                      ? 'CONFIRMED (FULL PAID)'
+                                      ? 'CONFIRMED (FULL)'
                                       : 'CONFIRMED'
                                     : b.status === 'pending'
                                     ? b.paymentMode === 'cod'
@@ -1138,7 +1136,7 @@ export default function AdminPage() {
                                     : b.status}
                                 </span>
                               </td>
-                              <td className="py-3.5 px-3 text-right whitespace-nowrap">
+                              <td className="py-2.5 px-2 text-right whitespace-nowrap">
                                 <select
                                   value={b.status}
                                   onChange={(e) => {
@@ -1149,7 +1147,7 @@ export default function AdminPage() {
                                       updateBookingStatus(b.id, val);
                                     }
                                   }}
-                                  className={`px-3 py-1.5 rounded-xl font-bold text-xs border focus:outline-none transition cursor-pointer whitespace-nowrap ${
+                                  className={`px-2 py-1 rounded-lg font-bold text-[10px] border focus:outline-none transition cursor-pointer whitespace-nowrap ${
                                     b.status === 'booked'
                                       ? 'bg-emerald-950/90 text-emerald-400 border-emerald-500/50'
                                       : b.status === 'contacted'
@@ -1163,9 +1161,9 @@ export default function AdminPage() {
                                 >
                                   <option value="pending" className="bg-zinc-900 text-amber-400">⏳ Pending</option>
                                   <option value="contacted" className="bg-zinc-900 text-blue-400">📞 Contacted</option>
-                                  <option value="booked" className="bg-zinc-900 text-emerald-400">✓ Mark Booked</option>
-                                  <option value="cancelled" className="bg-zinc-900 text-red-400">❌ Cancelled</option>
-                                  <option value="refunded" className="bg-zinc-900 text-purple-400">💸 Refunded</option>
+                                  <option value="booked" className="bg-zinc-900 text-emerald-400">✓ Booked</option>
+                                  <option value="cancelled" className="bg-zinc-900 text-red-400">❌ Cancel</option>
+                                  <option value="refunded" className="bg-zinc-900 text-purple-400">💸 Refund</option>
                                 </select>
                               </td>
                             </tr>
