@@ -1028,42 +1028,51 @@ export default function AdminPage() {
                       No inquiries found for selected date filter. Incoming leads from booking forms will appear here!
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs border-collapse">
+                    <div className="overflow-x-auto pb-3">
+                      <table className="w-full min-w-[1120px] text-left text-xs border-collapse">
                         <thead>
-                          <tr className="border-b border-zinc-800 text-zinc-400 uppercase font-black">
-                            <th className="py-3 px-3">Lead ID</th>
-                            <th className="py-3 px-3">Customer</th>
-                            <th className="py-3 px-3">Tour</th>
-                            <th className="py-3 px-3">Date / Guests</th>
-                            <th className="py-3 px-3">Mode</th>
-                            <th className="py-3 px-3">Amount</th>
-                            <th className="py-3 px-3">Status</th>
-                            <th className="py-3 px-3 text-right">Actions</th>
+                          <tr className="border-b border-zinc-800 text-zinc-400 uppercase font-black tracking-wider text-[11px]">
+                            <th className="py-3.5 px-3 w-32 whitespace-nowrap">Lead ID</th>
+                            <th className="py-3.5 px-3 w-44 whitespace-nowrap">Customer</th>
+                            <th className="py-3.5 px-3 min-w-[220px]">Tour</th>
+                            <th className="py-3.5 px-3 w-36 whitespace-nowrap">Date / Guests</th>
+                            <th className="py-3.5 px-3 w-40 whitespace-nowrap">Mode</th>
+                            <th className="py-3.5 px-3 w-56 whitespace-nowrap">Amount</th>
+                            <th className="py-3.5 px-3 w-48 whitespace-nowrap">Status</th>
+                            <th className="py-3.5 px-3 w-36 text-right whitespace-nowrap">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-800/60">
                           {filteredBookings.map((b) => (
-                            <tr key={b.id} className="hover:bg-zinc-950/50 transition">
-                              <td className="py-3 px-3 font-mono font-bold text-amber-400">
-                                {b.id}
+                            <tr key={b.id} className="hover:bg-zinc-950/60 transition">
+                              <td className="py-3.5 px-3 font-mono font-bold text-amber-400 whitespace-nowrap">
+                                <span className="bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-md inline-block whitespace-nowrap">
+                                  {b.id}
+                                </span>
                               </td>
-                              <td className="py-3 px-3 space-y-0.5">
-                                <span className="font-bold text-white block">{b.customerName}</span>
-                                <span className="text-[11px] text-zinc-400 block">{b.customerPhone}</span>
+                              <td className="py-3.5 px-3 whitespace-nowrap">
+                                <span className="font-bold text-white block truncate max-w-[160px]">{b.customerName}</span>
+                                <span className="text-[11px] text-zinc-400 block font-mono">{b.customerPhone}</span>
                               </td>
-                              <td className="py-3 px-3 text-zinc-300 font-medium">{b.tourTitle}</td>
-                              <td className="py-3 px-3 text-zinc-400">
-                                {b.date} ({b.guestCount} Guests)
+                              <td className="py-3.5 px-3">
+                                <span className="text-zinc-200 font-medium block max-w-[240px] leading-snug line-clamp-2" title={b.tourTitle}>
+                                  {b.tourTitle}
+                                </span>
                               </td>
-                              <td className="py-3 px-3">
+                              <td className="py-3.5 px-3 whitespace-nowrap text-zinc-400 font-medium">
+                                <span className="block text-zinc-300 font-mono text-[11px]">{b.date}</span>
+                                <span className="block text-[11px] text-zinc-500">
+                                  {b.guestCount} {b.guestCount === 1 ? 'Guest' : 'Guests'}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-3 whitespace-nowrap">
                                 <span
-                                  className={`text-[10px] font-black px-2 py-0.5 rounded uppercase ${
+                                  className={`inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider whitespace-nowrap border ${
                                     b.paymentMode === 'prepaid'
-                                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                                       : b.paymentMode === 'advance_30'
-                                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                      : 'bg-zinc-800 text-zinc-300 border border-zinc-700'
+                                      ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                                      : 'bg-zinc-800 text-zinc-300 border-zinc-700'
                                   }`}
                                 >
                                   {b.paymentMode === 'prepaid'
@@ -1073,39 +1082,47 @@ export default function AdminPage() {
                                     : '💵 COD CASH'}
                                 </span>
                                 {b.razorpayPaymentId && (
-                                  <span className="text-[9px] text-zinc-500 font-mono block mt-0.5 truncate max-w-[120px]" title={b.razorpayPaymentId}>
+                                  <span className="text-[9px] text-zinc-500 font-mono block mt-1 truncate max-w-[130px] whitespace-nowrap" title={b.razorpayPaymentId}>
                                     RP: {b.razorpayPaymentId}
                                   </span>
                                 )}
                               </td>
-                              <td className="py-3 px-3 space-y-0.5">
-                                <span className="font-mono font-bold text-white block">₹{b.amount || 0}</span>
+                              <td className="py-3.5 px-3 whitespace-nowrap">
+                                <span className="font-mono font-bold text-white text-sm block">
+                                  ₹{(b.amount || 0).toLocaleString('en-IN')}
+                                </span>
                                 {b.paymentMode === 'advance_30' ? (
-                                  <span className="text-[10px] font-bold text-amber-400 block font-mono">
-                                    Paid: ₹{(b.advancePaid ?? Math.round((b.amount || 0) * 0.3)).toLocaleString('en-IN')} | Due: ₹{(b.balanceDue ?? Math.round((b.amount || 0) * 0.7)).toLocaleString('en-IN')}
-                                  </span>
+                                  <div className="flex items-center gap-1.5 text-[10px] font-mono mt-0.5 whitespace-nowrap">
+                                    <span className="text-emerald-400 font-bold whitespace-nowrap">
+                                      Paid: ₹{(b.advancePaid ?? Math.round((b.amount || 0) * 0.3)).toLocaleString('en-IN')}
+                                    </span>
+                                    <span className="text-zinc-600">|</span>
+                                    <span className="text-amber-400 font-bold whitespace-nowrap">
+                                      Due: ₹{(b.balanceDue ?? Math.round((b.amount || 0) * 0.7)).toLocaleString('en-IN')}
+                                    </span>
+                                  </div>
                                 ) : b.paymentMode === 'prepaid' ? (
-                                  <span className="text-[10px] font-bold text-emerald-400 block font-mono">
+                                  <span className="text-[10px] font-bold text-emerald-400 font-mono block mt-0.5 whitespace-nowrap">
                                     Paid: ₹{(b.amount || 0).toLocaleString('en-IN')} (Full ✓)
                                   </span>
                                 ) : (
-                                  <span className="text-[10px] font-bold text-zinc-400 block font-mono">
+                                  <span className="text-[10px] font-bold text-zinc-400 font-mono block mt-0.5 whitespace-nowrap">
                                     Due on Pickup: ₹{(b.amount || 0).toLocaleString('en-IN')}
                                   </span>
                                 )}
                               </td>
-                              <td className="py-3 px-3">
+                              <td className="py-3.5 px-3 whitespace-nowrap">
                                 <span
-                                  className={`text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase ${
+                                  className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap border ${
                                     b.status === 'booked'
-                                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                                       : b.status === 'contacted'
-                                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                      ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
                                       : b.status === 'refunded'
-                                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                                      ? 'bg-purple-500/15 text-purple-400 border-purple-500/30'
                                       : b.status === 'cancelled'
-                                      ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                      : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                      ? 'bg-red-500/15 text-red-400 border-red-500/30'
+                                      : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
                                   }`}
                                 >
                                   {b.status === 'booked'
@@ -1121,7 +1138,7 @@ export default function AdminPage() {
                                     : b.status}
                                 </span>
                               </td>
-                              <td className="py-3 px-3 text-right">
+                              <td className="py-3.5 px-3 text-right whitespace-nowrap">
                                 <select
                                   value={b.status}
                                   onChange={(e) => {
@@ -1132,7 +1149,7 @@ export default function AdminPage() {
                                       updateBookingStatus(b.id, val);
                                     }
                                   }}
-                                  className={`px-3 py-1.5 rounded-xl font-bold text-xs border focus:outline-none transition cursor-pointer ${
+                                  className={`px-3 py-1.5 rounded-xl font-bold text-xs border focus:outline-none transition cursor-pointer whitespace-nowrap ${
                                     b.status === 'booked'
                                       ? 'bg-emerald-950/90 text-emerald-400 border-emerald-500/50'
                                       : b.status === 'contacted'
@@ -1151,8 +1168,6 @@ export default function AdminPage() {
                                   <option value="refunded" className="bg-zinc-900 text-purple-400">💸 Refunded</option>
                                 </select>
                               </td>
-
-
                             </tr>
                           ))}
                         </tbody>
