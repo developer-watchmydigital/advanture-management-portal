@@ -5,6 +5,8 @@ import { AppProvider } from '@/context/AppContext';
 import { AuthProvider } from '@/context/AuthContext';
 import LoginModal from '@/components/LoginModal';
 
+import JsonLd from '@/components/JsonLd';
+
 const outfit = Outfit({
   subsets: ['latin'],
   variable: '--font-outfit',
@@ -18,14 +20,68 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: 'Watch my Adventure | #1 Extreme Water & Hill Adventures in Goa',
+  metadataBase: new URL('https://adventure.watchmydigital.com'),
+  title: {
+    default: 'Watch my Adventure | #1 Extreme Water & Hill Adventures in Goa',
+    template: '%s | Watch my Adventure Goa',
+  },
   description: 'Book thrilling Goa adventures: Scuba Diving at Grande Island, 55M Bungee Jumping, Dudhsagar Jeep Safari, Mandovi Luxury Dinner Cruise, VIP Floating Casino, and 5-in-1 Water Sports.',
-  keywords: ['Watch my Adventure', 'Goa adventures', 'scuba diving Goa', 'bungee jumping Goa', 'Dudhsagar safari', 'Mandovi dinner cruise', 'water sports Calangute'],
+  keywords: [
+    'Watch my Adventure',
+    'Goa adventures',
+    'scuba diving Goa',
+    'Grande island scuba',
+    'bungee jumping Goa',
+    'Dudhsagar waterfall safari',
+    'Mandovi dinner cruise',
+    'water sports Calangute',
+    'Deltin Royale casino pass',
+    'Goa water sports combo',
+  ],
+  authors: [{ name: 'Watch my Adventure' }],
+  creator: 'Watch my Adventure',
+  publisher: 'Watch my Adventure',
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    title: 'Watch my Adventure | #1 Extreme Water & Hill Adventures in Goa',
+    description: 'Book thrilling Goa adventures: Scuba Diving at Grande Island, 55M Bungee Jumping, Dudhsagar Jeep Safari, Dinner Cruises, and Casino Passes.',
+    url: 'https://adventure.watchmydigital.com',
+    siteName: 'Watch my Adventure',
+    images: [
+      {
+        url: '/logo.png',
+        width: 1200,
+        height: 630,
+        alt: 'Watch my Adventure Goa',
+      },
+    ],
+    locale: 'en_IN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Watch my Adventure | #1 Extreme Water & Hill Adventures in Goa',
+    description: 'Book thrilling Goa adventures: Scuba Diving, Bungee Jumping, Dudhsagar Safari & Casino VIP Passes.',
+    images: ['/logo.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: {
     icon: '/logo.png',
     shortcut: '/logo.png',
-    apple: '/logo.png'
-  }
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({
@@ -40,6 +96,7 @@ export default function RootLayout({
           <AppProvider>
             {children}
             <LoginModal />
+            <JsonLd />
           </AppProvider>
         </AuthProvider>
       </body>
